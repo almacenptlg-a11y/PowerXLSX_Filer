@@ -211,156 +211,67 @@ class DataViewerApp {
     }
   }
 
-  async handleMultipleFiles(files) {
+ async handleMultipleFiles(files) {
     this.setLoading(true);
-    this.showToast(
-      `Evaluando y combinando ${files.length} archivos masivos...`,
-      "info"
-    );
+    this.showToast(`Iniciando aceleración por hardware para ${files.length} archivos...`, 'info');
 
     try {
-      let combinedJson = [];
-      let allColumns = new Set();
-      let structureMismatch = false;
-      let referenceHeaders = null;
-      let filesProcessed = 0;
+      // Instanciamos el Web Worker
+      const worker = new Worker('worker.js');
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      // Escuchamos lo que nos dice el Worker
+      worker.onmessage = (e) => {
+        const response = e.data;
 
-        // ACTUALIZAR INTERFAZ
-        const loadingText = this.els.loadingState.querySelector("p");
-        if (loadingText)
-          loadingText.innerText = `Procesando archivo ${i + 1} de ${
-            files.length
-          }...\n${file.name}`;
-        await this.forceRender();
-
-        try {
-          let data = await this.readFileAsync(file);
-          let workbook = XLSX.read(data, { type: "array", cellDates: true });
-          let sheetName = workbook.SheetNames[0];
-          let sheet = workbook.Sheets[sheetName];
-          let rawMatrix = XLSX.utils.sheet_to_json(sheet, {
-            header: 1,
-            defval: ""
-          });
-
-          if (rawMatrix.length === 0) continue;
-
-          const headerIdx = rawMatrix.findIndex(
-            (row) =>
-              row &&
-              row.filter((c) => c !== undefined && String(c).trim() !== "")
-                .length >= 1
-          );
-          if (headerIdx === -1) {
-            console.warn(
-              `Archivo ignorado (sin encabezados detectables): ${file.name}`
-            );
-            continue;
+        if (response.type === 'progress') {
+          // Actualizar texto de carga
+          const loadingText = this.els.loadingState.querySelector("p");
+          if(loadingText) loadingText.innerText = response.msg;
+        } 
+        else if (response.type === 'error') {
+          this.showToast(response.msg, 'error');
+        } 
+        else if (response.type === 'done') {
+          if (response.data.length === 0) {
+            this.showToast("No se encontraron datos válidos.", "error");
+            this.setLoading(false);
+            worker.terminate();
+            return;
           }
 
-          const headerRow = rawMatrix[headerIdx];
-          const fileCols = [];
+          this.els.reportTitle.value = "Reporte_Combinado";
+          
+          const loadingText = this.els.loadingState.querySelector("p");
+          if(loadingText) loadingText.innerText = "Construyendo tabla interactiva...";
 
-          headerRow.forEach((colName, idx) => {
-            let safeName =
-              colName !== undefined &&
-              colName !== null &&
-              String(colName).trim() !== ""
-                ? String(colName).trim()
-                : `Columna_${idx + 1}`;
-            if (fileCols.includes(safeName)) {
-              let c = 1;
-              while (fileCols.includes(`${safeName}_${c}`)) c++;
-              safeName = `${safeName}_${c}`;
-            }
-            fileCols.push(safeName);
-            allColumns.add(safeName);
-          });
+          // Inicializamos los datos
+          this.initData(response.data, response.columns);
+          this.setLoading(false);
 
-          if (!referenceHeaders) {
-            referenceHeaders = fileCols;
-          } else if (referenceHeaders.join(",") !== fileCols.join(",")) {
-            structureMismatch = true;
+          if (response.structureMismatch) {
+              this.showToast(`Carga masiva: ${response.data.length.toLocaleString()} filas. NOTA: Las columnas variaban.`, 'warning');
+          } else {
+              this.showToast(`¡Completado en tiempo récord! ${response.data.length.toLocaleString()} filas procesadas.`, 'success');
           }
 
-          // PROCESAMIENTO POR LOTES
-          const CHUNK_SIZE = 5000;
-          for (let r = headerIdx + 1; r < rawMatrix.length; r += CHUNK_SIZE) {
-            const end = Math.min(r + CHUNK_SIZE, rawMatrix.length);
-            for (let j = r; j < end; j++) {
-              const rowArr = rawMatrix[j];
-              if (
-                !rowArr ||
-                rowArr.length === 0 ||
-                rowArr.every((c) => c === "" || c === undefined)
-              )
-                continue;
-
-              const rowObj = {};
-              let hasData = false;
-
-              fileCols.forEach((colKey, colIdx) => {
-                const cellVal = rowArr[colIdx];
-                rowObj[colKey] = cellVal !== undefined ? cellVal : "";
-                if (cellVal !== undefined && cellVal !== "" && cellVal !== null)
-                  hasData = true;
-              });
-
-              if (hasData) {
-                rowObj["Archivo_Origen"] = file.name;
-                combinedJson.push(rowObj);
-              }
-            }
-            // Pausa para evitar colapso
-            await new Promise((res) => setTimeout(res, 1));
-          }
-
-          data = null;
-          workbook = null;
-          sheet = null;
-          rawMatrix = null;
-          filesProcessed++;
-        } catch (fileErr) {
-          console.error(`Error procesando ${file.name}:`, fileErr);
-          this.showToast(
-            `Se omitió ${file.name} por un error interno.`,
-            "error"
-          );
+          // Asesinamos al Worker para liberar la RAM instantáneamente
+          worker.terminate();
         }
-      }
+      };
 
-      if (combinedJson.length === 0)
-        throw new Error("No se encontraron datos válidos en los archivos.");
+      worker.onerror = (err) => {
+        console.error("Error en Worker:", err);
+        this.showToast("Ocurrió un error en el procesamiento en segundo plano.", "error");
+        this.setLoading(false);
+        worker.terminate();
+      };
 
-      this.els.reportTitle.value = "Reporte_Combinado";
-      allColumns.add("Archivo_Origen");
-      const finalColumns = Array.from(allColumns);
+      // Le pasamos los archivos al Worker y que comience la magia
+      worker.postMessage({ files: Array.from(files) });
 
-      const loadingText = this.els.loadingState.querySelector("p");
-      if (loadingText)
-        loadingText.innerText = "Construyendo tabla interactiva...";
-      await this.forceRender();
-
-      this.initData(combinedJson, finalColumns);
-      this.setLoading(false);
-
-      if (structureMismatch) {
-        this.showToast(
-          `Carga masiva: ${combinedJson.length.toLocaleString()} filas. NOTA: Las columnas variaban.`,
-          "warning"
-        );
-      } else {
-        this.showToast(
-          `¡Completado! Se combinaron ${combinedJson.length.toLocaleString()} filas de ${filesProcessed} archivos.`,
-          "success"
-        );
-      }
     } catch (err) {
       console.error(err);
-      this.showToast(`Error combinando archivos: ${err.message}`, "error");
+      this.showToast(`Error de configuración: ${err.message}`, 'error');
       this.setLoading(false);
     }
   }
