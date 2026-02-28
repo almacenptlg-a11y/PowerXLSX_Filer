@@ -4,10 +4,10 @@ let currentWorkbook = null;
 let tempRawMatrix = [];
 
 self.onmessage = async function(e) {
-  const { action } = e.data;
+  const action = e.data.action;
 
   try {
-      // 1. ANALIZAR UN ARCHIVO GIGANTE (Solo extrae las hojas)
+      // 1. ANALIZAR UN ARCHIVO GIGANTE
       if (action === 'analyzeFile') {
           const file = e.data.file;
           self.postMessage({ type: 'progress', msg: 'Cargando archivo en memoria...' });
@@ -18,34 +18,25 @@ self.onmessage = async function(e) {
           const sheets = currentWorkbook.SheetNames;
           const author = currentWorkbook.Props && currentWorkbook.Props.Author ? currentWorkbook.Props.Author : "Usuario";
           
-          self.postMessage({ 
-              type: 'fileAnalyzed', 
-              sheets: sheets, 
-              author: author,
-              fileName: file.name
-          });
+          self.postMessage({ type: 'fileAnalyzed', sheets: sheets, author: author, fileName: file.name });
       }
       
-      // 2. EXTRAER VISTA PREVIA (Extrae 50 filas para no colapsar la pantalla)
+      // 2. EXTRAER VISTA PREVIA (Para el modal)
       else if (action === 'loadSheet') {
           const sheetName = e.data.sheetName;
-          self.postMessage({ type: 'progress', msg: `Extrayendo vista previa de: ${sheetName}...` });
+          self.postMessage({ type: 'progress', msg: 'Extrayendo vista previa de: ' + sheetName + '...' });
           
           const sheet = currentWorkbook.Sheets[sheetName];
           tempRawMatrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
           
-          const preview = tempRawMatrix.slice(0, 50); // Muestra máximo 50 filas
-          
-          self.postMessage({ 
-              type: 'sheetLoaded', 
-              preview: preview,
-              totalRows: tempRawMatrix.length
-          });
+          const preview = tempRawMatrix.slice(0, 50);
+          self.postMessage({ type: 'sheetLoaded', preview: preview, totalRows: tempRawMatrix.length });
       }
 
-      // 3. PROCESAR 500,000 FILAS DE UNA HOJA
+      // 3. PROCESAR EL ARCHIVO GIGANTE INDIVIDUAL (Medio millón de filas)
       else if (action === 'processSingle') {
-          const { headerIdx, footerSkip } = e.data;
+          const headerIdx = e.data.headerIdx;
+          const footerSkip = e.data.footerSkip;
           self.postMessage({ type: 'progress', msg: 'Ensamblando cientos de miles de filas...' });
 
           const headerRow = tempRawMatrix[headerIdx];
@@ -53,11 +44,11 @@ self.onmessage = async function(e) {
 
           const columns = [];
           headerRow.forEach((colName, idx) => {
-            let safeName = colName !== undefined && colName !== null && String(colName).trim() !== "" ? String(colName).trim() : `Columna_${idx + 1}`;
+            let safeName = colName !== undefined && colName !== null && String(colName).trim() !== "" ? String(colName).trim() : 'Columna_' + (idx + 1);
             if (columns.includes(safeName)) {
               let c = 1;
-              while (columns.includes(`${safeName}_${c}`)) c++;
-              safeName = `${safeName}_${c}`;
+              while (columns.includes(safeName + '_' + c)) c++;
+              safeName = safeName + '_' + c;
             }
             columns.push(safeName);
           });
@@ -80,14 +71,12 @@ self.onmessage = async function(e) {
             if (hasData) jsonData.push(rowObj);
           }
 
-          // Liberar RAM del trabajador
           tempRawMatrix = []; 
           currentWorkbook = null;
-
           self.postMessage({ type: 'singleDone', data: jsonData, columns: columns });
       }
 
-      // 4. PROCESAR MÚLTIPLES ARCHIVOS GIGANTES
+      // 4. PROCESAR MÚLTIPLES ARCHIVOS
       else if (action === 'processMultiple') {
           const files = e.data.files;
           let combinedJson = [];
@@ -98,7 +87,7 @@ self.onmessage = async function(e) {
 
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            self.postMessage({ type: 'progress', msg: `Procesando archivo ${i + 1} de ${files.length}...\n${file.name}` });
+            self.postMessage({ type: 'progress', msg: 'Procesando archivo ' + (i + 1) + ' de ' + files.length + '...\n' + file.name });
 
             const buffer = await file.arrayBuffer();
             const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
@@ -115,12 +104,11 @@ self.onmessage = async function(e) {
             const fileCols = [];
 
             headerRow.forEach((colName, idx) => {
-               let safeName = (colName !== undefined && colName !== null && String(colName).trim() !== "")
-                              ? String(colName).trim() : `Columna_${idx+1}`;
+               let safeName = (colName !== undefined && colName !== null && String(colName).trim() !== "") ? String(colName).trim() : 'Columna_' + (idx+1);
                if(fileCols.includes(safeName)) {
                   let c = 1;
-                  while(fileCols.includes(`${safeName}_${c}`)) c++;
-                  safeName = `${safeName}_${c}`;
+                  while(fileCols.includes(safeName + '_' + c)) c++;
+                  safeName = safeName + '_' + c;
                }
                fileCols.push(safeName);
                allColumns.add(safeName);
