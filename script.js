@@ -168,25 +168,24 @@ class DataViewerApp {
     });
   }
 
-  // --- MOTOR WEB WORKER CENTRALIZADO --- //
+  // --- MOTOR WEB WORKER (Limpio para Servidor / GitHub Pages) --- //
   initWorker() {
     if (this.worker) this.worker.terminate();
-    this.worker = new Worker('worker.js');
+    
+    // Simplemente llamamos al archivo externo (ideal para GitHub Pages)
+    this.worker = new Worker('./worker.js');
     
     this.worker.onmessage = (e) => {
       const res = e.data;
 
-      // Actualizar mensajes en pantalla
       if (res.type === 'progress') {
         const loadingText = this.els.loadingState.querySelector("p");
         if(loadingText) loadingText.innerText = res.msg;
       } 
-      // Errores
       else if (res.type === 'error') {
         this.showToast(res.msg, 'error');
         this.setLoading(false);
       }
-      // Archivo único analizado (Saber hojas y nombre)
       else if (res.type === 'fileAnalyzed') {
         this.els.reportTitle.value = res.fileName.replace(/\.[^/.]+$/, "");
         this.els.reportAuthor.value = res.author;
@@ -198,7 +197,6 @@ class DataViewerApp {
           this.worker.postMessage({ action: 'loadSheet', sheetName: res.sheets[0] });
         }
       }
-      // Vista previa de hoja cargada
       else if (res.type === 'sheetLoaded') {
         this.tempPreviewMatrix = res.preview;
         this.tempTotalRows = res.totalRows;
@@ -212,7 +210,6 @@ class DataViewerApp {
         this.els.structureModal.classList.add("active");
         this.renderPreviewTableRows();
       }
-      // Archivo único procesado completamente (500k filas)
       else if (res.type === 'singleDone') {
         this.els.structureModal.classList.remove("active");
         const loadingText = this.els.loadingState.querySelector("p");
@@ -228,7 +225,6 @@ class DataViewerApp {
         this.setLoading(false);
         this.showToast(`¡Estructura aplicada! ${res.data.length.toLocaleString()} filas cargadas ultra rápido.`, "success");
       }
-      // Archivos múltiples combinados
       else if (res.type === 'multipleDone') {
         if (res.data.length === 0) {
           this.showToast("No se encontraron datos válidos.", "error");
