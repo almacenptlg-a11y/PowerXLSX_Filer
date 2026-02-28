@@ -159,9 +159,10 @@
   </select>
 </div>
 
-        <button class="btn btn-ghost danger-hover" id="btnResetPrefs" title="Restaurar configuración visual">
-          <i class="ph ph-arrow-counter-clockwise"></i>
+<button class="btn btn-ghost" onclick="app.undo()" title="Deshacer última edición (Ctrl+Z)">
+          <i class="ph ph-arrow-u-up-left"></i>
         </button>
+
 
         <button class="btn btn-ghost" onclick="app.toggleTheme()" title="Cambiar Tema Dark/Light">
           <i class="ph ph-moon" id="themeIcon"></i>
@@ -186,6 +187,10 @@
             </div>
           </div>
         </div>
+
+        <button class="btn btn-ghost danger-hover" id="btnResetPrefs" title="Restaurar configuración visual">
+          <i class="ph ph-arrow-counter-clockwise"></i>
+        </button>
 
         <div class="brand-right">
           <i class="ph ph-grid-four"></i>
