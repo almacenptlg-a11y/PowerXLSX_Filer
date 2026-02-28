@@ -1131,3 +1131,83 @@ tbody tr.row-selected td:first-child {
     display: none;
   } /* Ocultar el logo en tablets para dar espacio */
 }
+
+/* ==============================================================
+   🌟 UPGRADE PREMIUM: BARRAS DE DESPLAZAMIENTO (SCROLLBARS)
+   ============================================================== */
+/* Ancho y alto de la barra */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+/* El carril por donde se mueve */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* El "pulgar" o barra móvil */
+::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.3);
+  border-radius: 20px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.6);
+}
+
+/* Scrollbar sutil para el modo oscuro */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.2);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.5);
+}
+
+/* ==============================================================
+   🌟 UPGRADE PREMIUM: EFECTO GLASSMORPHISM (VIDRIO ESMERILADO)
+   ============================================================== */
+/* Menús desplegables (Exportar, Menú de Columnas, Contextual) */
+.dropdown {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="dark"] .dropdown {
+  background: rgba(30, 41, 59, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Tarjetas Modales (Mapeo CSV AlmacénPT, Selección de Hoja) */
+.modal-card {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-theme="dark"] .modal-card {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Encabezado fijo de la tabla principal (Da un efecto de profundidad al hacer scroll) */
+thead th {
+  background: rgba(248, 250, 252, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+[data-theme="dark"] thead th {
+  background: rgba(30, 41, 59, 0.85) !important;
+}
