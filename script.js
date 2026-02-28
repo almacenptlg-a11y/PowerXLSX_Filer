@@ -48,6 +48,7 @@ class DataViewerApp {
       colMenu: document.getElementById("colMenu"),
       exportMenu: document.getElementById("exportMenu"),
       globalSearch: document.getElementById("globalSearch"),
+      densitySelect: document.getElementById("densitySelect"),
       dragOverlay: document.getElementById("dragOverlay"),
       ctxMenu: document.getElementById("columnContextMenu"),
       colListContainer: document.getElementById("colListContainer"),
@@ -166,6 +167,12 @@ class DataViewerApp {
         this.undo();        
       }
     });
+    // Evento para cambiar la densidad de la tabla
+    if(this.els.densitySelect) {
+      this.els.densitySelect.addEventListener("change", (e) => {
+        this.changeDensity(e.target.value);
+      });
+    }
   }
 
   // --- MOTOR WEB WORKER (Limpio para Servidor / GitHub Pages) --- //
@@ -293,6 +300,28 @@ class DataViewerApp {
     if(this.els.tfoot) this.els.tfoot.innerHTML = "";
   }
 
+  changeDensity(mode) {
+    const wrapper = this.els.tableWrapper;
+    if (!wrapper) return;
+
+    // 1. Limpiamos cualquier clase de densidad anterior
+    wrapper.classList.remove("density-compact", "density-relaxed");
+
+    // 2. Aplicamos la nueva densidad elegida
+    if (mode === "compact") {
+      wrapper.classList.add("density-compact");
+    } else if (mode === "relaxed") {
+      wrapper.classList.add("density-relaxed");
+    }
+
+    // 3. Guardamos la preferencia en el navegador
+    this.densityMode = mode;
+    this.savePreferences();
+    
+    // Mostramos un pequeño feedback visual
+    this.showToast(`Vista cambiada a: ${mode}`, "info");
+  }
+
   showSheetSelection(sheets) {
     const list = this.els.sheetList;
     list.innerHTML = "";
@@ -388,6 +417,11 @@ class DataViewerApp {
         this.pageSize = prefs.pageSize;
         const pageSizeSelect = document.getElementById('pageSize');
         if(pageSizeSelect) pageSizeSelect.value = this.pageSize;
+    }
+    if (prefs && prefs.density) {
+        this.densityMode = prefs.density;
+        if(this.els.densitySelect) this.els.densitySelect.value = prefs.density;
+        this.changeDensity(prefs.density);
     }
 
     this.colSettings = {};
@@ -1402,7 +1436,7 @@ class DataViewerApp {
 
   savePreferences() {
     try {
-      const prefs = { pageSize: this.pageSize, colSettings: {} };
+      const prefs = { pageSize: this.pageSize, density: this.densityMode || 'normal', colSettings: {} };
       Object.keys(this.colSettings).forEach(col => {
         prefs.colSettings[col] = {
           hidden: this.colSettings[col].hidden,
