@@ -854,29 +854,6 @@ tfoot td {
 }
 
 /* =========================================
-   SCROLLBARS PERSONALIZADOS
-   ========================================= */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-body);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-  border: 2px solid var(--bg-body); /* Crea un efecto de margen */
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* =========================================
    ESTADO DE FILA SELECCIONADA (CLICK)
    ========================================= */
 tbody tr.row-selected td {
@@ -1210,4 +1187,127 @@ thead th {
 
 [data-theme="dark"] thead th {
   background: rgba(30, 41, 59, 0.85) !important;
+}
+
+/* ==============================================================
+   🌟 UPGRADE PREMIUM: EFECTO CROSSHAIR (GUÍA VISUAL DE LECTURA)
+   ============================================================== */
+/* 1. Resaltado elegante de la fila entera */
+tbody tr:hover td {
+  background-color: rgba(14, 165, 233, 0.04) !important;
+}
+
+[data-theme="dark"] tbody tr:hover td {
+  background-color: rgba(56, 189, 248, 0.08) !important;
+}
+
+/* 2. Resaltado específico de la celda exacta (Punto de mira) */
+tbody td:hover {
+  background-color: rgba(14, 165, 233, 0.12) !important;
+  box-shadow: inset 0 0 0 1px var(--accent) !important;
+}
+
+[data-theme="dark"] tbody td:hover {
+  background-color: rgba(56, 189, 248, 0.2) !important;
+}
+
+/* ==============================================================
+   🌟 UPGRADE PREMIUM: DENSIDAD DE TABLA (CLASES DINÁMICAS)
+   ============================================================== */
+/* Modo Compacto (Ideal para ver muchísimos datos sin hacer scroll) */
+.table-wrapper.density-compact td { 
+  padding: 4px 8px; 
+  font-size: 12px; 
+  height: 28px; 
+}
+.table-wrapper.density-compact th { 
+  padding: 8px; 
+  font-size: 12px; 
+}
+
+/* Modo Relajado (Ideal para pantallas grandes y táctiles) */
+.table-wrapper.density-relaxed td { 
+  padding: 16px 20px; 
+  font-size: 14px; 
+  height: 52px; 
+}
+.table-wrapper.density-relaxed th { 
+  padding: 16px 20px; 
+  font-size: 14px; 
+}
+
+/* ==============================================================
+   🌟 UPGRADE PREMIUM: MICRO-INTERACCIONES Y ANIMACIONES
+   ============================================================== */
+
+/* 1. Animación Flotante para el Estado Vacío (Le da vida a la pantalla inicial) */
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  color: var(--accent); /* Un toque de color en lugar de gris aburrido */
+  animation: float-icon 3s ease-in-out infinite;
+  filter: drop-shadow(0 10px 15px rgba(14, 165, 233, 0.2));
+}
+
+[data-theme="dark"] .empty-icon {
+  filter: drop-shadow(0 10px 15px rgba(56, 189, 248, 0.1));
+}
+
+@keyframes float-icon {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+
+/* 2. Efecto Pulso de Energía en Botones Principales al pasar el mouse */
+.btn-primary:hover, .btn-gradient:hover {
+  animation: pulse-soft 1.5s infinite;
+}
+
+@keyframes pulse-soft {
+  0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+}
+
+/* 3. Upgrade a los Toasts (Notificaciones con Efecto Resorte / Bouncy) */
+.toast {
+  /* Sobreescribimos la animación anterior con una curva cubic-bezier para el rebote */
+  animation: slideBounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards !important;
+}
+
+@keyframes slideBounce {
+  0% { 
+    transform: translateX(120%); 
+    opacity: 0; 
+  }
+  100% { 
+    transform: translateX(0); 
+    opacity: 1; 
+  }
+}
+
+/* 4. Suave aparición de las filas de la tabla al cargar los datos */
+tbody tr {
+  animation: fadeInRow 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+/* Retraso escalonado para las primeras 10 filas (Efecto cascada) */
+tbody tr:nth-child(1) { animation-delay: 0.05s; }
+tbody tr:nth-child(2) { animation-delay: 0.10s; }
+tbody tr:nth-child(3) { animation-delay: 0.15s; }
+tbody tr:nth-child(4) { animation-delay: 0.20s; }
+tbody tr:nth-child(5) { animation-delay: 0.25s; }
+tbody tr:nth-child(n+6) { animation-delay: 0.30s; }
+
+@keyframes fadeInRow {
+  from { 
+    opacity: 0; 
+    transform: translateY(5px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
 }
