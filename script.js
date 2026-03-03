@@ -1198,6 +1198,7 @@ class DataViewerApp {
     this.showToast(`Exportado a ${format.toUpperCase()}`, "success");
   }
 
+
 // --- LÓGICA PERSONALIZADA CSV ALMACÉN PT ---
   openCsvMapper() {
     this.els.exportMenu.classList.remove("show");
@@ -1208,6 +1209,9 @@ class DataViewerApp {
       this.els.mapPedido, this.els.mapOrdenCompra
     ];
 
+    // Limpiamos cualquier bloque de muestra antiguo que haya quedado en el HTML
+    document.querySelectorAll('.col-preview').forEach(el => el.remove());
+
     selects.forEach((sel) => {
       sel.innerHTML = '<option value="">-- Seleccionar Columna --</option>';
       this.columns.forEach((col) => {
@@ -1216,18 +1220,20 @@ class DataViewerApp {
         sel.appendChild(opt);
       });
 
-      // --- MAGIA UX: Contenedor de vista previa ---
-      // Buscamos si ya creamos el elemento antes para no duplicarlo
-      let previewEl = sel.parentNode.querySelector('.col-preview');
-      if (!previewEl) {
-          previewEl = document.createElement('div');
-          previewEl.className = 'col-preview';
-          // Lo insertamos justo debajo del <select>
-          sel.parentNode.insertBefore(previewEl, sel.nextSibling);
-
-          // Escuchamos cada vez que el usuario cambia la opción
-          sel.addEventListener('change', () => this.showSampleData(sel.value, previewEl));
+      // Insertamos el span de muestra directamente AL LADO del número de etiqueta
+      let container = sel.closest('.mapping-row') || sel.parentElement;
+      let labelEl = container.querySelector('.mapping-label') || sel.previousElementSibling;
+      if (labelEl) {
+         let previewSpan = labelEl.querySelector('.inline-preview');
+         if (!previewSpan) {
+             previewSpan = document.createElement('span');
+             previewSpan.className = 'inline-preview';
+             labelEl.appendChild(previewSpan);
+         }
       }
+
+      // Al cambiar la lista desplegable, se actualiza la muestra
+      sel.addEventListener('change', () => this.updateAllPreviews());
     });
 
     const autoSelect = (selectElement, keywords) => {
@@ -1242,34 +1248,75 @@ class DataViewerApp {
     autoSelect(this.els.mapPedido, ["empaques pedidos", "pedido", "unidades", "cant", "solicitud"]);
     autoSelect(this.els.mapOrdenCompra, ["orden", "num_oc", "compra", "oc", "po", "numero"]);
 
-    // Disparamos el evento 'change' artificialmente para que las opciones auto-seleccionadas muestren su vista previa
-    selects.forEach(sel => sel.dispatchEvent(new Event('change')));
+    // Evento en vivo: Si el usuario escribe manualmente su localidad, actualiza la muestra
+    if (!this.mappedEventsBound) {
+        this.els.inputManualLocalidad.addEventListener('input', () => this.updateAllPreviews());
+        this.mappedEventsBound = true;
+    }
 
     this.els.chkManualLocalidad.checked = false;
     this.toggleLocalidadInput();
     this.els.inputManualLocalidad.value = "";
+    
     this.els.chkAutoOC.checked = false;
     this.toggleAutoOC(); 
+    
     this.els.csvMapModal.classList.add("active");
+    
+    // Ejecutar la actualización inicial un instante después para asegurar que el DOM esté listo
+    setTimeout(() => this.updateAllPreviews(), 50);
   }
 
-  // Nueva sub-función de ayuda (Pégala justo debajo de openCsvMapper)
-  showSampleData(colName, previewElement) {
-    if (!colName) {
-        previewElement.innerHTML = '';
-        return;
-    }
-    
-    // Busca la primera fila en toda la data que tenga información real en esa columna
+  getSampleData(colName) {
+    if (!colName) return "";
     const sampleRow = this.rawData.find(row => row[colName] !== undefined && row[colName] !== null && String(row[colName]).trim() !== "");
-
     if (sampleRow) {
         const val = String(sampleRow[colName]);
-        // Si el texto es muy largo, lo cortamos para no deformar el modal
-        const displayVal = val.length > 40 ? val.substring(0, 40) + "..." : val;
-        previewElement.innerHTML = `<i class="ph ph-eye"></i> Muestra: <strong>${this.escapeHTML(displayVal)}</strong>`;
+        return val.length > 30 ? val.substring(0, 30) + "..." : val;
+    }
+    return "";
+  }
+
+  // Motor central que recalcula TODAS las muestras basándose en los checkboxes
+  updateAllPreviews() {
+    const updateSpan = (sel, text) => {
+        let container = sel.closest('.mapping-row') || sel.parentElement;
+        let labelEl = container.querySelector('.mapping-label') || sel.previousElementSibling;
+        if(labelEl) {
+            let span = labelEl.querySelector('.inline-preview');
+            if(span) {
+                if (!text || text === "") {
+                    span.innerHTML = ``;
+                } else {
+                    span.innerHTML = `(Muestra: <strong>${this.escapeHTML(text)}</strong>)`;
+                }
+            }
+        }
+    };
+
+    // 1. Localidad (Revisa el checkbox Fijo)
+    if (this.els.chkManualLocalidad.checked) {
+        let val = this.els.inputManualLocalidad.value.trim() || "Escribe un valor...";
+        updateSpan(this.els.mapLocalidad, val);
     } else {
-        previewElement.innerHTML = `<i class="ph ph-eye-slash"></i> Muestra: <em>(Columna vacía)</em>`;
+        updateSpan(this.els.mapLocalidad, this.getSampleData(this.els.mapLocalidad.value));
+    }
+
+    // 2. Scan Code
+    updateSpan(this.els.mapScanCode, this.getSampleData(this.els.mapScanCode.value));
+
+    // 3. Producto X
+    updateSpan(this.els.mapProducto, this.getSampleData(this.els.mapProducto.value));
+
+    // 4. Pedido
+    updateSpan(this.els.mapPedido, this.getSampleData(this.els.mapPedido.value));
+
+    // 5. Orden Compra (Revisa el checkbox Automático)
+    if (this.els.chkAutoOC.checked) {
+        let valOC = this.els.previewAutoOC && this.els.previewAutoOC.value ? this.els.previewAutoOC.value : "ID Automático";
+        updateSpan(this.els.mapOrdenCompra, valOC);
+    } else {
+        updateSpan(this.els.mapOrdenCompra, this.getSampleData(this.els.mapOrdenCompra.value));
     }
   }
 
@@ -1281,6 +1328,8 @@ class DataViewerApp {
       this.els.mapLocalidad.classList.remove("hidden");
       this.els.inputManualLocalidad.classList.add("hidden");
     }
+    // Si marcamos o desmarcamos la casilla, forzamos actualización de la muestra
+    if(this.updateAllPreviews) this.updateAllPreviews();
   }
 
   toggleAutoOC() {
@@ -1294,7 +1343,12 @@ class DataViewerApp {
       this.els.mapOrdenCompra.classList.remove("hidden");
       this.els.previewAutoOC.classList.add("hidden");
     }
+    // Si marcamos o desmarcamos la casilla, forzamos actualización de la muestra
+    if(this.updateAllPreviews) this.updateAllPreviews();
   }
+
+
+ 
 
   generateCustomCSV() {
     const isAutoOC = this.els.chkAutoOC.checked;
