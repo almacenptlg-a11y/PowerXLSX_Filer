@@ -470,7 +470,8 @@ class DataViewerApp {
         dateStyle: "short",
         currency: "PEN",
         align: "auto",
-        textStyle: "none"
+        textStyle: "none",
+        padZeros: 0
       };
 
       if (prefs && prefs.colSettings && prefs.colSettings[col]) {
@@ -482,6 +483,7 @@ class DataViewerApp {
         this.colSettings[col].dateStyle = saved.dateStyle || this.colSettings[col].dateStyle;
         this.colSettings[col].align = saved.align || this.colSettings[col].align;
         this.colSettings[col].textStyle = saved.textStyle || this.colSettings[col].textStyle;
+        this.colSettings[col].padZeros = saved.padZeros !== undefined ? saved.padZeros : 0;
       }
     });
 
@@ -761,6 +763,12 @@ class DataViewerApp {
 
     extraControls += `
       <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
+      extraControls += `
+      <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <label class="col-menu-label" style="margin:0">Completar Ceros</label>
+            <input type="number" min="0" max="20" class="form-input form-input-sm" style="width:60px" placeholder="Ej: 8" value="${settings.padZeros || 0}" onchange="app.changeColPadZeros('${col}', this.value)">
+        </div>
         <label class="col-menu-label" style="margin-bottom:2px">Alineación</label>
         <select class="form-select" onchange="app.changeColAlign('${col}', this.value)">
            <option value="auto" ${settings.align === "auto" || !settings.align ? "selected" : ""}>Automática</option>
@@ -871,6 +879,10 @@ class DataViewerApp {
   changeColDateStyle(col, val) { this.colSettings[col].dateStyle = val; this.updateAndKeepMenu(col); }
   changeColCurrency(col, val) { this.colSettings[col].currency = val; this.updateAndKeepMenu(col); }
   changeColAlign(col, val) { this.colSettings[col].align = val; this.updateAndKeepMenu(col); }
+  changeColPadZeros(col, val) { 
+      this.colSettings[col].padZeros = parseInt(val) || 0; 
+      this.updateAndKeepMenu(col); 
+  }
   changeColTextStyle(col, val) { this.colSettings[col].textStyle = val; this.updateAndKeepMenu(col); }
 
   updateAndKeepMenu(col) {
@@ -1416,21 +1428,28 @@ class DataViewerApp {
     const csvRows = [];
     csvRows.push("LOCALIDAD,SCAN_COD,PRODUCTO X,PEDIDO,ORDEN DE COMPRA");
 
-    const clean = (txt) => {
+   // Función que limpia el texto Y le aplica los ceros si la columna lo requiere
+    const clean = (txt, colName) => {
       if (txt === null || txt === undefined) return "";
-      let str = String(txt);
-      return str.replace(/,/g, " ").replace(/[\r\n]+/g, " ").trim();
+      let str = String(txt).replace(/,/g, " ").replace(/[\r\n]+/g, " ").trim();
+      
+      // MAGIA: Aplicar relleno de ceros de intersistemas
+      if (colName && this.colSettings[colName] && this.colSettings[colName].padZeros > 0) {
+          str = str.padStart(this.colSettings[colName].padZeros, '0');
+      }
+      return str;
     };
 
     this.visibleData.forEach((row) => {
-      let valLoc = map.isManualLoc ? map.manualLocVal : row[map.locCol] || "";
-      let valScan = row[map.scanCol] || "";
-      let valProd = row[map.prodCol] || "";
-      let valPed = row[map.pedCol] || "";
-      let valOC = isAutoOC ? autoOCValue : row[map.ocCol] || "";
+      // Pasamos el nombre de la columna original a la función clean() para que sepa si debe rellenar
+      let valLoc = map.isManualLoc ? clean(map.manualLocVal, null) : clean(row[map.locCol], map.locCol);
+      let valScan = clean(row[map.scanCol], map.scanCol);
+      let valProd = clean(row[map.prodCol], map.prodCol);
+      let valPed = clean(row[map.pedCol], map.pedCol);
+      let valOC = isAutoOC ? clean(autoOCValue, null) : clean(row[map.ocCol], map.ocCol);
 
       csvRows.push(
-        `${clean(valLoc)},${clean(valScan)},${clean(valProd)},${clean(valPed)},${clean(valOC)}`
+        `${valLoc},${valScan},${valProd},${valPed},${valOC}`
       );
     });
 
@@ -1491,8 +1510,10 @@ class DataViewerApp {
       return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${val}</a>`;
     }
     
-    if (type === "text" || typeof val === "string") {
-      return String(val);
+   if (type === "text") {
+      let strVal = String(val);
+      if (config.padZeros > 0) strVal = strVal.padStart(config.padZeros, '0');
+      return strVal;
     }
 
     if (type === "date" || type === "datetime" || type === "time" || val instanceof Date) {
@@ -1532,7 +1553,12 @@ class DataViewerApp {
         return pctVal.toLocaleString("es-PE", { style: "percent", minimumFractionDigits: decimals, maximumFractionDigits: decimals });
       }
       
-      if (type === "integer") return parseInt(val).toLocaleString("es-PE");
+      if (type === "integer") {
+        let intStr = parseInt(numVal).toString();
+        // Si el usuario pidió rellenar ceros, no le ponemos comas de miles, solo ceros
+        if (config.padZeros > 0) return intStr.padStart(config.padZeros, '0');
+        return parseInt(numVal).toLocaleString("es-PE");
+      }
       
       return val.toLocaleString("es-PE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     }
@@ -1587,7 +1613,8 @@ showToast(msg, type = "info") {
           currency: this.colSettings[col].currency || "PEN",
           dateStyle: this.colSettings[col].dateStyle,
           align: this.colSettings[col].align,
-          textStyle: this.colSettings[col].textStyle
+          textStyle: this.colSettings[col].textStyle,
+          padZeros: this.colSettings[col].padZeros
         };
       });
       localStorage.setItem('dataViewerPrefs', JSON.stringify(prefs));
