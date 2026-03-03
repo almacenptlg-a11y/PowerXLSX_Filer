@@ -173,6 +173,42 @@ class DataViewerApp {
         this.changeDensity(e.target.value);
       });
     }
+
+// =================================================================
+    // 🚀 NUEVO: PEGADO MÁGICO DESDE EL PORTAPAPELES (CTRL+V)
+    // =================================================================
+    window.addEventListener('paste', (e) => {
+      // 1. REGLA DE SEGURIDAD: Si el usuario está escribiendo en un cuadro de texto 
+      // (ej. el buscador o editando una celda), NO interrumpimos su pegado normal.
+      const activeTag = document.activeElement ? document.activeElement.tagName : '';
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+          return;
+      }
+
+      // 2. Capturar el texto crudo del portapapeles
+      const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+      
+      if (!pastedText) return;
+
+      // 3. ¿Es una tabla? (Si tiene saltos de línea y tabulaciones o punto y coma)
+      const isTable = pastedText.includes('\n') && (pastedText.includes('\t') || pastedText.includes(';') || pastedText.includes(','));
+
+      if (isTable) {
+          e.preventDefault(); // Evitamos cualquier comportamiento raro del navegador
+          
+          this.showToast("Tabla detectada en el portapapeles. Procesando...", "success");
+          
+          // 4. Transformar el texto fantasma en un "Archivo Físico Virtual"
+          const blob = new Blob([pastedText], { type: 'text/csv;charset=utf-8;' });
+          
+          // Le damos un nombre para que el reporte sepa de dónde vino
+          const file = new File([blob], "Tabla_Pegada_Correo.csv", { type: "text/csv" });
+          
+          // 5. Se lo inyectamos al mismo motor masivo que ya construimos
+          this.handleFiles([file]);
+      }
+    });
+    
   }
 
   // --- MOTOR WEB WORKER (Limpio para Servidor / GitHub Pages) --- //
