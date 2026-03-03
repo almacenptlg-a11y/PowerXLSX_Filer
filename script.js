@@ -731,7 +731,7 @@ class DataViewerApp {
     }
   }
 
- renderMenuContent(col, container) {
+renderMenuContent(col, container) {
     const settings = this.colSettings[col];
     const relevantRows = this.rawData.filter((row) => {
       return this.columns.every((c) => {
@@ -744,24 +744,44 @@ class DataViewerApp {
     const uniqueVals = [...new Set(relevantRows.map((r) => String(r[col])))].sort();
 
     let extraControls = "";
+
+    // 1. DECIMALES (Solo para números, monedas y porcentajes)
     if (["number", "currency", "percent"].includes(settings.type)) {
-      extraControls += `<div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between;"><label class="col-menu-label" style="margin:0">Decimales</label><input type="number" min="0" max="6" class="form-input form-input-sm" style="width:60px" value="${settings.decimals}" onchange="app.changeColDecimal('${col}', this.value)"></div>`;
+      extraControls += `
+        <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between;">
+          <label class="col-menu-label" style="margin:0">Decimales</label>
+          <input type="number" min="0" max="6" class="form-input form-input-sm" style="width:60px" value="${settings.decimals}" onchange="app.changeColDecimal('${col}', this.value)">
+        </div>`;
     }
 
+    // 2. SÍMBOLO (Solo para monedas)
     if (settings.type === "currency") {
-      extraControls += `<div style="margin-top:8px"><label class="col-menu-label" style="margin-bottom:2px">Simbolo</label><select class="form-select" onchange="app.changeColCurrency('${col}', this.value)"><option value="PEN" ${settings.currency === "PEN" ? "selected" : ""}>S/ (PEN)</option><option value="USD" ${settings.currency === "USD" ? "selected" : ""}>$ (USD)</option><option value="EUR" ${settings.currency === "EUR" ? "selected" : ""}>€ (EUR)</option></select></div>`;
+      extraControls += `
+        <div style="margin-top:8px">
+          <label class="col-menu-label" style="margin-bottom:2px">Símbolo</label>
+          <select class="form-select" onchange="app.changeColCurrency('${col}', this.value)">
+            <option value="PEN" ${settings.currency === "PEN" ? "selected" : ""}>S/ (PEN)</option>
+            <option value="USD" ${settings.currency === "USD" ? "selected" : ""}>$ (USD)</option>
+            <option value="EUR" ${settings.currency === "EUR" ? "selected" : ""}>€ (EUR)</option>
+          </select>
+        </div>`;
     }
 
+    // 3. ESTILOS DE FECHA (Solo para fechas)
     if (["date", "datetime"].includes(settings.type)) {
-      extraControls += `<div style="margin-top:8px"><label class="col-menu-label" style="margin-bottom:2px">Estilo</label><select class="form-select" onchange="app.changeColDateStyle('${col}', this.value)">
-        <option value="short" ${settings.dateStyle === "short" ? "selected" : ""}>Corto (DD/MM/YYYY)</option>
-        <option value="medium" ${settings.dateStyle === "medium" ? "selected" : ""}>Medio (04 ene 2026)</option>
-        <option value="long" ${settings.dateStyle === "long" ? "selected" : ""}>Largo (4 de enero...)</option>
-        <option value="full" ${settings.dateStyle === "full" ? "selected" : ""}>Texto (Miércoles...)</option>
-        </select></div>`;
+      extraControls += `
+        <div style="margin-top:8px">
+          <label class="col-menu-label" style="margin-bottom:2px">Estilo</label>
+          <select class="form-select" onchange="app.changeColDateStyle('${col}', this.value)">
+            <option value="short" ${settings.dateStyle === "short" ? "selected" : ""}>Corto (DD/MM/YYYY)</option>
+            <option value="medium" ${settings.dateStyle === "medium" ? "selected" : ""}>Medio (04 ene 2026)</option>
+            <option value="long" ${settings.dateStyle === "long" ? "selected" : ""}>Largo (4 de enero...)</option>
+            <option value="full" ${settings.dateStyle === "full" ? "selected" : ""}>Texto (Miércoles...)</option>
+          </select>
+        </div>`;
     }
 
-      // Mostrar Completar Ceros SOLO si el formato es "Código"
+    // 4. COMPLETAR CEROS (Únicamente para formato "Código")
     if (settings.type === "code") {
       extraControls += `
         <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
@@ -769,11 +789,10 @@ class DataViewerApp {
               <label class="col-menu-label" style="margin:0; color:var(--primary);">Completar Ceros</label>
               <input type="number" min="0" max="20" class="form-input form-input-sm" style="width:60px" placeholder="Ej: 8" value="${settings.padZeros || 0}" onchange="app.changeColPadZeros('${col}', this.value)">
           </div>
-        </div>
-      `;
+        </div>`;
     }
 
-    // Alineación y Mayúsculas (Para todos los tipos de texto)
+    // 5. ALINEACIÓN VISUAL (Aplica para todo)
     extraControls += `
       <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
         <label class="col-menu-label" style="margin-bottom:2px">Alineación</label>
@@ -783,18 +802,23 @@ class DataViewerApp {
            <option value="center" ${settings.align === "center" ? "selected" : ""}>Centro</option>
            <option value="right" ${settings.align === "right" ? "selected" : ""}>Derecha</option>
         </select>
-      </div>
-      <div style="margin-top:8px">
-        <label class="col-menu-label" style="margin-bottom:2px">Mayús / Minús</label>
-        <select class="form-select" onchange="app.changeColTextStyle('${col}', this.value)">
-           <option value="none" ${settings.textStyle === "none" || !settings.textStyle ? "selected" : ""}>Normal</option>
-           <option value="uppercase" ${settings.textStyle === "uppercase" ? "selected" : ""}>MAYÚSCULAS</option>
-           <option value="lowercase" ${settings.textStyle === "lowercase" ? "selected" : ""}>minúsculas</option>
-           <option value="capitalize" ${settings.textStyle === "capitalize" ? "selected" : ""}>Capitalizar</option>
-        </select>
-      </div>
-    `;
+      </div>`;
 
+    // 6. MAYÚSCULAS Y MINÚSCULAS (Solo textos, códigos, enlaces y fechas)
+    if (["text", "code", "date", "datetime", "time", "link"].includes(settings.type)) {
+        extraControls += `
+          <div style="margin-top:8px">
+            <label class="col-menu-label" style="margin-bottom:2px">Mayús / Minús</label>
+            <select class="form-select" onchange="app.changeColTextStyle('${col}', this.value)">
+               <option value="none" ${settings.textStyle === "none" || !settings.textStyle ? "selected" : ""}>Normal</option>
+               <option value="uppercase" ${settings.textStyle === "uppercase" ? "selected" : ""}>MAYÚSCULAS</option>
+               <option value="lowercase" ${settings.textStyle === "lowercase" ? "selected" : ""}>minúsculas</option>
+               <option value="capitalize" ${settings.textStyle === "capitalize" ? "selected" : ""}>Capitalizar</option>
+            </select>
+          </div>`;
+    }
+
+    // ENSAMBLAJE FINAL DEL MENÚ
     container.innerHTML = `
         <div class="col-menu-section">
           <label class="col-menu-label">Formato</label>
@@ -813,8 +837,6 @@ class DataViewerApp {
           </select>
           ${extraControls}
         </div>
-
-      
         <div class="col-menu-section">
           <label class="col-menu-label">Filtrar (${uniqueVals.length})</label>
           <input type="text" class="form-input form-input-sm" placeholder="Buscar..." oninput="app.filterMenuSearch(this.value)">
@@ -826,6 +848,7 @@ class DataViewerApp {
         </div>
       `;
 
+    // LÓGICA DE FILTRADO (Se mantiene igual, inyectando las casillas)
     const filterContainer = container.querySelector("#filterListContainer");
     const allDiv = document.createElement("div");
     allDiv.className = "filter-item";
