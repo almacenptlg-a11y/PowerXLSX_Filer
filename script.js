@@ -761,12 +761,21 @@ class DataViewerApp {
         </select></div>`;
     }
 
+      // Mostrar Completar Ceros SOLO si el formato es "Código"
+    if (settings.type === "code") {
+      extraControls += `
+        <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label class="col-menu-label" style="margin:0; color:var(--primary);">Completar Ceros</label>
+              <input type="number" min="0" max="20" class="form-input form-input-sm" style="width:60px" placeholder="Ej: 8" value="${settings.padZeros || 0}" onchange="app.changeColPadZeros('${col}', this.value)">
+          </div>
+        </div>
+      `;
+    }
+
+    // Alineación y Mayúsculas (Para todos los tipos de texto)
     extraControls += `
       <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-            <label class="col-menu-label" style="margin:0">Completar Ceros</label>
-            <input type="number" min="0" max="20" class="form-input form-input-sm" style="width:60px" placeholder="Ej: 8" value="${settings.padZeros || 0}" onchange="app.changeColPadZeros('${col}', this.value)">
-        </div>
         <label class="col-menu-label" style="margin-bottom:2px">Alineación</label>
         <select class="form-select" onchange="app.changeColAlign('${col}', this.value)">
            <option value="auto" ${settings.align === "auto" || !settings.align ? "selected" : ""}>Automática</option>
@@ -792,6 +801,7 @@ class DataViewerApp {
           <select class="form-select" onchange="app.changeColFormat('${col}', this.value)">
             <option value="auto" ${settings.type === "auto" ? "selected" : ""}>Automático</option>
             <option value="text" ${settings.type === "text" ? "selected" : ""}>Texto</option>
+            <option value="code" ${settings.type === "code" ? "selected" : ""}>Código (SKU/EAN)</option>
             <option value="number" ${settings.type === "number" ? "selected" : ""}>Número</option>
             <option value="integer" ${settings.type === "integer" ? "selected" : ""}>Entero</option>
             <option value="currency" ${settings.type === "currency" ? "selected" : ""}>Moneda</option>
@@ -803,6 +813,8 @@ class DataViewerApp {
           </select>
           ${extraControls}
         </div>
+
+      
         <div class="col-menu-section">
           <label class="col-menu-label">Filtrar (${uniqueVals.length})</label>
           <input type="text" class="form-input form-input-sm" placeholder="Buscar..." oninput="app.filterMenuSearch(this.value)">
@@ -1426,13 +1438,12 @@ class DataViewerApp {
     const csvRows = [];
     csvRows.push("LOCALIDAD,SCAN_COD,PRODUCTO X,PEDIDO,ORDEN DE COMPRA");
 
-   // Función que limpia el texto Y le aplica los ceros si la columna lo requiere
+   // Función que limpia el texto Y le aplica los ceros si la columna es Código
     const clean = (txt, colName) => {
       if (txt === null || txt === undefined) return "";
       let str = String(txt).replace(/,/g, " ").replace(/[\r\n]+/g, " ").trim();
       
-      // MAGIA: Aplicar relleno de ceros de intersistemas
-      if (colName && this.colSettings[colName] && this.colSettings[colName].padZeros > 0) {
+      if (colName && this.colSettings[colName] && this.colSettings[colName].type === "code" && this.colSettings[colName].padZeros > 0) {
           str = str.padStart(this.colSettings[colName].padZeros, '0');
       }
       return str;
@@ -1509,10 +1520,13 @@ class DataViewerApp {
       return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${val}</a>`;
     }
 
-    // Si explícitamente es texto, lo devolvemos tal cual
-    if (type === "text") {
+    // Procesamiento de Textos y Códigos
+    if (type === "text" || type === "code") {
       let strVal = String(val);
-      if (config.padZeros > 0) strVal = strVal.padStart(config.padZeros, '0');
+      // Solo rellena ceros si explícitamente es formato Código
+      if (type === "code" && config.padZeros > 0) {
+          strVal = strVal.padStart(config.padZeros, '0');
+      }
       return strVal;
     }
 
@@ -1569,9 +1583,6 @@ class DataViewerApp {
       
       if (type === "integer") {
         let intStr = parseInt(numVal).toString();
-        // Si el usuario pidió rellenar ceros
-        if (config.padZeros > 0) return intStr.padStart(config.padZeros, '0');
-        return parseInt(numVal).toLocaleString("es-PE");
       }
       
       return numVal.toLocaleString("es-PE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
