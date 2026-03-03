@@ -1311,3 +1311,32 @@ tbody tr:nth-child(n+6) { animation-delay: 0.30s; }
     transform: translateY(0); 
   }
 }
+
+/* ==============================================================
+   🌟 VISTA PREVIA DE COLUMNAS (MAPEO CSV)
+   ============================================================== */
+.col-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: fadeInRow 0.2s ease-out;
+}
+
+.col-preview strong {
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  word-break: break-all;
+}
+
+[data-theme="dark"] .col-preview strong {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent);
+}
