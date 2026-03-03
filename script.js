@@ -1198,7 +1198,7 @@ class DataViewerApp {
     this.showToast(`Exportado a ${format.toUpperCase()}`, "success");
   }
 
-  // --- LÓGICA PERSONALIZADA CSV ALMACÉN PT ---
+// --- LÓGICA PERSONALIZADA CSV ALMACÉN PT ---
   openCsvMapper() {
     this.els.exportMenu.classList.remove("show");
     if (this.columns.length === 0) return this.showToast("No hay datos cargados", "error");
@@ -1215,6 +1215,19 @@ class DataViewerApp {
         opt.value = col; opt.innerText = col;
         sel.appendChild(opt);
       });
+
+      // --- MAGIA UX: Contenedor de vista previa ---
+      // Buscamos si ya creamos el elemento antes para no duplicarlo
+      let previewEl = sel.parentNode.querySelector('.col-preview');
+      if (!previewEl) {
+          previewEl = document.createElement('div');
+          previewEl.className = 'col-preview';
+          // Lo insertamos justo debajo del <select>
+          sel.parentNode.insertBefore(previewEl, sel.nextSibling);
+
+          // Escuchamos cada vez que el usuario cambia la opción
+          sel.addEventListener('change', () => this.showSampleData(sel.value, previewEl));
+      }
     });
 
     const autoSelect = (selectElement, keywords) => {
@@ -1229,12 +1242,35 @@ class DataViewerApp {
     autoSelect(this.els.mapPedido, ["empaques pedidos", "pedido", "unidades", "cant", "solicitud"]);
     autoSelect(this.els.mapOrdenCompra, ["orden", "num_oc", "compra", "oc", "po", "numero"]);
 
+    // Disparamos el evento 'change' artificialmente para que las opciones auto-seleccionadas muestren su vista previa
+    selects.forEach(sel => sel.dispatchEvent(new Event('change')));
+
     this.els.chkManualLocalidad.checked = false;
     this.toggleLocalidadInput();
     this.els.inputManualLocalidad.value = "";
     this.els.chkAutoOC.checked = false;
     this.toggleAutoOC(); 
     this.els.csvMapModal.classList.add("active");
+  }
+
+  // Nueva sub-función de ayuda (Pégala justo debajo de openCsvMapper)
+  showSampleData(colName, previewElement) {
+    if (!colName) {
+        previewElement.innerHTML = '';
+        return;
+    }
+    
+    // Busca la primera fila en toda la data que tenga información real en esa columna
+    const sampleRow = this.rawData.find(row => row[colName] !== undefined && row[colName] !== null && String(row[colName]).trim() !== "");
+
+    if (sampleRow) {
+        const val = String(sampleRow[colName]);
+        // Si el texto es muy largo, lo cortamos para no deformar el modal
+        const displayVal = val.length > 40 ? val.substring(0, 40) + "..." : val;
+        previewElement.innerHTML = `<i class="ph ph-eye"></i> Muestra: <strong>${this.escapeHTML(displayVal)}</strong>`;
+    } else {
+        previewElement.innerHTML = `<i class="ph ph-eye-slash"></i> Muestra: <em>(Columna vacía)</em>`;
+    }
   }
 
   toggleLocalidadInput() {
