@@ -731,7 +731,7 @@ class DataViewerApp {
     }
   }
 
-  renderMenuContent(col, container) {
+ renderMenuContent(col, container) {
     const settings = this.colSettings[col];
     const relevantRows = this.rawData.filter((row) => {
       return this.columns.every((c) => {
@@ -762,8 +762,6 @@ class DataViewerApp {
     }
 
     extraControls += `
-      <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
-      extraControls += `
       <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
             <label class="col-menu-label" style="margin:0">Completar Ceros</label>
@@ -1499,26 +1497,35 @@ class DataViewerApp {
     return "";
   }
 
-  formatValue(val, config) {
+ formatValue(val, config) {
     const type = config.type;
     const decimals = config.decimals !== undefined ? config.decimals : 2;
     const curr = config.currency || "PEN";
 
     if (val === null || val === undefined || val === "") return "";
     
+    // Enlaces
     if (type === "link" || (typeof val === "string" && val.startsWith("http"))) {
       return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${val}</a>`;
     }
-    
-   if (type === "text") {
+
+    // Si explícitamente es texto, lo devolvemos tal cual
+    if (type === "text") {
       let strVal = String(val);
       if (config.padZeros > 0) strVal = strVal.padStart(config.padZeros, '0');
       return strVal;
     }
 
+    // --- PROCESAMIENTO DE FECHAS ---
     if (type === "date" || type === "datetime" || type === "time" || val instanceof Date) {
       try {
-        const d = val instanceof Date ? val : new Date(val);
+        let d;
+        if (val instanceof Date) {
+          d = val;
+        } else {
+          d = new Date(val); 
+        }
+
         if (isNaN(d.getTime())) return val;
 
         if (type === "time") return d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
@@ -1544,26 +1551,34 @@ class DataViewerApp {
       }
     }
 
-    if (typeof val === "number") {
-      if (type === "currency") 
-        return val.toLocaleString("es-PE", { style: "currency", currency: curr, minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    // --- PROCESAMIENTO DE NÚMEROS (Moneda, Porcentaje, Enteros) ---
+    if (["number", "currency", "percent", "integer"].includes(type)) {
+      // Forzamos la conversión a número, limpiando posibles comas del CSV
+      let numVal = typeof val === "number" ? val : parseFloat(String(val).replace(/,/g, '').trim());
+      
+      if (isNaN(numVal)) return val;
+
+      if (type === "currency") {
+        return numVal.toLocaleString("es-PE", { style: "currency", currency: curr, minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+      }
       
       if (type === "percent") {
-        const pctVal = val > 1 ? val / 100 : val;
+        const pctVal = numVal > 1 ? numVal / 100 : numVal;
         return pctVal.toLocaleString("es-PE", { style: "percent", minimumFractionDigits: decimals, maximumFractionDigits: decimals });
       }
       
       if (type === "integer") {
         let intStr = parseInt(numVal).toString();
-        // Si el usuario pidió rellenar ceros, no le ponemos comas de miles, solo ceros
+        // Si el usuario pidió rellenar ceros
         if (config.padZeros > 0) return intStr.padStart(config.padZeros, '0');
         return parseInt(numVal).toLocaleString("es-PE");
       }
       
-      return val.toLocaleString("es-PE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+      return numVal.toLocaleString("es-PE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     }
     
-    return val;
+    // Por defecto, lo que quede se devuelve normal
+    return String(val);
   }
 
 
