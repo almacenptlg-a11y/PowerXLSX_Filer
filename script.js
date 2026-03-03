@@ -1414,19 +1414,35 @@ class DataViewerApp {
     return val;
   }
 
-  showToast(msg, type = "info") {
+
+showToast(msg, type = "info") {
     const c = document.getElementById("toastContainer");
+    if (!c) return;
+
     const t = document.createElement("div");
     t.className = `toast toast-${type}`;
     const icon = type === "success" ? "ph-check-circle" : type === "error" ? "ph-warning-circle" : "ph-info";
+    
+    // Le agregamos una transición nativa por si el CSS falla
+    t.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+    
     t.innerHTML = `<i class="ph ${icon}" style="font-size:20px; color:${type === "success" ? "var(--success)" : "var(--danger)"}"></i><span>${msg}</span>`;
     c.appendChild(t);
+
+    // Temporizador de destrucción garantizada
     setTimeout(() => {
-      t.style.opacity = "0";
-      t.addEventListener("transitionend", () => t.remove());
-    }, 3000);
+      t.style.opacity = "0"; // Se desvanece
+      t.style.transform = "translateX(100%)"; // Se desliza hacia afuera
+      
+      // Eliminamos el elemento del DOM 400ms después (cuando ya es invisible)
+      setTimeout(() => {
+        if (t.parentNode) t.remove();
+      }, 400);
+      
+    }, 3000); // Aparece en pantalla por 3 segundos
   }
 
+  
   loadPreferences() {
     try {
       const stored = localStorage.getItem('dataViewerPrefs');
