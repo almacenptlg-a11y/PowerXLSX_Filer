@@ -1572,13 +1572,17 @@ renderMenuContent(col, container) {
     document.getElementById("themeIcon").className = isDark ? "ph ph-moon" : "ph ph-sun";
   }
 
-  setLoading(v) {
+setLoading(v) {
     if (v) {
       this.els.loadingState.classList.remove("hidden");
       this.els.emptyState.classList.add("hidden");
       this.els.tableWrapper.classList.add("hidden");
     } else {
       this.els.loadingState.classList.add("hidden");
+      // 🚀 MAGIA: Si ya tenemos columnas cargadas, quitamos la invisibilidad de la tabla
+      if (this.columns && this.columns.length > 0) {
+        this.els.tableWrapper.classList.remove("hidden");
+      }
     }
   }
 
@@ -1672,8 +1676,11 @@ if (typeof val === "string" && config.textStyle && config.textStyle !== "none") 
         return pctVal.toLocaleString("es-PE", { style: "percent", minimumFractionDigits: decimals, maximumFractionDigits: decimals });
       }
       
-      if (type === "integer") {
+     if (type === "integer") {
         let intStr = parseInt(numVal).toString();
+        // Restauramos la lógica de retorno y relleno de ceros
+        if (config.padZeros > 0) return intStr.padStart(config.padZeros, '0');
+        return parseInt(numVal).toLocaleString("es-PE");
       }
       
       return numVal.toLocaleString("es-PE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
