@@ -492,7 +492,10 @@ class DataViewerApp {
         currency: "PEN",
         align: "auto",
         textStyle: "none",
-        padZeros: 0
+        padZeros: 0,
+        linkMode: "url", 
+        linkText: "Abrir Enlace",
+        linkCol: ""
       };
 
       if (prefs && prefs.colSettings && prefs.colSettings[col]) {
@@ -505,6 +508,9 @@ class DataViewerApp {
         this.colSettings[col].align = saved.align || this.colSettings[col].align;
         this.colSettings[col].textStyle = saved.textStyle || this.colSettings[col].textStyle;
         this.colSettings[col].padZeros = saved.padZeros !== undefined ? saved.padZeros : 0;
+        this.colSettings[col].linkMode = saved.linkMode || "url";
+        this.colSettings[col].linkText = saved.linkText || "Abrir Enlace";
+        this.colSettings[col].linkCol = saved.linkCol || "";
       }
     });
 
@@ -703,7 +709,7 @@ class DataViewerApp {
         const config = this.colSettings[col];
         
         td.className = this.getAlignClass(config.type);
-        td.innerHTML = this.formatValue(row[col], config);
+        td.innerHTML = this.formatValue(row[col], config, row);
         
         if (config.align && config.align !== "auto") td.style.textAlign = config.align;
         if (config.textStyle && config.textStyle !== "none") td.style.textTransform = config.textStyle;
@@ -870,7 +876,7 @@ renderMenuContent(col, container) {
       </div>`;
 
     // 6. MAYÚSCULAS Y MINÚSCULAS (Solo textos, códigos, enlaces y fechas)
-    if (["text", "code", "date", "datetime", "time", "link"].includes(settings.type)) {
+    if (["text", , "date", "link"].includes(settings.type)) {
         extraControls += `
           <div style="margin-top:8px">
             <label class="col-menu-label" style="margin-bottom:2px">Mayús / Minús</label>
@@ -881,6 +887,39 @@ renderMenuContent(col, container) {
                <option value="capitalize" ${settings.textStyle === "capitalize" ? "selected" : ""}>Capitalizar</option>
             </select>
           </div>`;
+    }
+
+  // 7. ENMASCARAMIENTO DE ENLACES (Solo si el formato es Enlace)
+    if (settings.type === "link") {
+      const colOptions = this.columns.filter(c => !this.colSettings[c].hidden).map(c => `<option value="${c}" ${settings.linkCol === c ? "selected" : ""}>${c}</option>`).join('');
+
+      extraControls += `
+        <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
+          <label class="col-menu-label" style="margin-bottom:2px">Mostrar enlace como:</label>
+          <select class="form-select" onchange="app.changeLinkMode('${col}', this.value)">
+             <option value="url" ${settings.linkMode === "url" || !settings.linkMode ? "selected" : ""}>URL Completa</option>
+             <option value="fixed" ${settings.linkMode === "fixed" ? "selected" : ""}>Texto Fijo</option>
+             <option value="column" ${settings.linkMode === "column" ? "selected" : ""}>Valor de Columna</option>
+          </select>
+        </div>
+      `;
+
+      if (settings.linkMode === "fixed") {
+          extraControls += `
+            <div style="margin-top:4px">
+              <input type="text" class="form-input form-input-sm" placeholder="Ej: Abrir PDF..." value="${settings.linkText || ''}" onchange="app.changeLinkText('${col}', this.value)">
+            </div>
+          `;
+      } else if (settings.linkMode === "column") {
+          extraControls += `
+            <div style="margin-top:4px">
+              <select class="form-select form-input-sm" onchange="app.changeLinkCol('${col}', this.value)">
+                <option value="">-- Seleccionar columna --</option>
+                ${colOptions}
+              </select>
+            </div>
+          `;
+      }
     }
 
     // ENSAMBLAJE FINAL DEL MENÚ
@@ -977,6 +1016,9 @@ renderMenuContent(col, container) {
   changeColDateStyle(col, val) { this.colSettings[col].dateStyle = val; this.updateAndKeepMenu(col); }
   changeColCurrency(col, val) { this.colSettings[col].currency = val; this.updateAndKeepMenu(col); }
   changeColAlign(col, val) { this.colSettings[col].align = val; this.updateAndKeepMenu(col); }
+  changeLinkMode(col, val) { this.colSettings[col].linkMode = val; this.updateAndKeepMenu(col); }
+  changeLinkText(col, val) { this.colSettings[col].linkText = val; this.updateAndKeepMenu(col); }
+  changeLinkCol(col, val) { this.colSettings[col].linkCol = val; this.updateAndKeepMenu(col); }
   changeColPadZeros(col, val) { 
       this.colSettings[col].padZeros = parseInt(val) || 0; 
       this.updateAndKeepMenu(col); 
@@ -1043,7 +1085,7 @@ renderMenuContent(col, container) {
 
     row[col] = finalVal;
     td.classList.remove("cell-editing");
-    td.innerHTML = this.formatValue(finalVal, config);
+    td.innerHTML = this.formatValue(finalVal, config, row);
     
     if (config.align && config.align !== "auto") td.style.textAlign = config.align;
     if (config.textStyle && config.textStyle !== "none") td.style.textTransform = config.textStyle;
@@ -1191,7 +1233,7 @@ renderMenuContent(col, container) {
           const config = this.colSettings[col];
           const type = config.type;
           let val = row[col];
-          let cellHtml = this.formatValue(val, config);
+          let cellHtml = this.formatValue(val, config, row);
           let alignClass = "text-left";
           let cssClass = "col-text";
           let dataAttrs = "";
@@ -1646,7 +1688,7 @@ setLoading(v) {
     return "";
   }
 
- formatValue(val, config) {
+ formatValue(val, config, row = null) {
     const type = config.type;
     const decimals = config.decimals !== undefined ? config.decimals : 2;
     const curr = config.currency || "PEN";
@@ -1739,7 +1781,18 @@ if (typeof val === "string" && config.textStyle && config.textStyle !== "none") 
       
       return numVal.toLocaleString("es-PE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     }
-    
+
+   // 🚀 NUEVO: Enmascaramiento Inteligente de Enlaces
+    if (type === "link" || (typeof val === "string" && val.startsWith("http"))) {
+      let displayTxt = val; // Por defecto muestra la URL larga
+      
+      if (config.linkMode === 'fixed' && config.linkText) {
+          displayTxt = config.linkText; // Ej: "Ver Documento"
+      } else if (config.linkMode === 'column' && config.linkCol && row && row[config.linkCol]) {
+          displayTxt = row[config.linkCol]; // Ej: Muestra el Código del Producto
+      }
+      return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${this.escapeHTML(displayTxt)}</a>`;
+    }
     // Por defecto, lo que quede se devuelve normal
     return String(val);
   }
@@ -1792,7 +1845,10 @@ showToast(msg, type = "info") {
           dateStyle: this.colSettings[col].dateStyle,
           align: this.colSettings[col].align,
           textStyle: this.colSettings[col].textStyle,
-          padZeros: this.colSettings[col].padZeros
+         padZeros: this.colSettings[col].padZeros,
+          linkMode: this.colSettings[col].linkMode,
+          linkText: this.colSettings[col].linkText,
+          linkCol: this.colSettings[col].linkCol
         };
       });
       localStorage.setItem('dataViewerPrefs', JSON.stringify(prefs));
