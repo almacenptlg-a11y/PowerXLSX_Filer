@@ -1336,3 +1336,31 @@ tbody tr:nth-child(n+6) { animation-delay: 0.30s; }
 [data-theme="dark"] .inline-preview strong {
   background: rgba(56, 189, 248, 0.15);
 }
+
+/* ==============================================================
+   🌟 BOTÓN OCULTAR COLUMNA EN ENCABEZADO
+   ============================================================== */
+.btn-col-hide {
+  opacity: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto; /* Empuja el botón al borde derecho */
+}
+
+/* Solo aparece cuando el ratón está sobre el encabezado */
+thead th:hover .btn-col-hide {
+  opacity: 0.5;
+}
+
+/* Se vuelve rojo al pasarle el ratón directamente */
+.btn-col-hide:hover {
+  opacity: 1 !important;
+  color: var(--danger) !important;
+  background: rgba(239, 68, 68, 0.1);
+}
