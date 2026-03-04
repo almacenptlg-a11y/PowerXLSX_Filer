@@ -545,22 +545,30 @@ class DataViewerApp {
       });
     });
 
- // --- BUSCADOR GLOBAL ULTRARRÁPIDO ---
+// --- BUSCADOR GLOBAL ULTRARRÁPIDO Y PRECISO ---
     if (this.searchQuery) {
-      // 1. Pre-calculamos las columnas visibles UNA SOLA VEZ, no 400,000 veces
       const visibleCols = this.columns.filter(col => !this.colSettings[col].hidden);
       const query = this.searchQuery;
+      const searchTarget = this.els.searchColumn ? this.els.searchColumn.value : "all";
 
       processed = processed.filter((row) => {
-        // 2. Usamos un ciclo 'for' clásico. Es la estructura de código más rápida de JavaScript.
-        for (let i = 0; i < visibleCols.length; i++) {
-          const val = row[visibleCols[i]];
-          if (val !== null && val !== undefined && val !== "") {
-             // Si encuentra coincidencia, aprueba la fila y rompe el ciclo para ahorrar tiempo
-             if (String(val).toLowerCase().includes(query)) return true;
-          }
+        // Opción A: Búsqueda específica en una sola columna
+        if (searchTarget !== "all") {
+            const val = row[searchTarget];
+            if (val !== null && val !== undefined && val !== "") {
+               if (String(val).toLowerCase().includes(query)) return true;
+            }
+            return false;
+        } else {
+            // Opción B: Búsqueda tradicional en todas las visibles
+            for (let i = 0; i < visibleCols.length; i++) {
+              const val = row[visibleCols[i]];
+              if (val !== null && val !== undefined && val !== "") {
+                 if (String(val).toLowerCase().includes(query)) return true;
+              }
+            }
+            return false;
         }
-        return false;
       });
     }
 
@@ -1054,7 +1062,53 @@ renderMenuContent(col, container) {
     this.showToast("Edición deshecha", "info");
   }
 
-  buildColumnPicker() { this.renderColumnList(this.columns); }
+  buildColumnPicker() { this.renderColumnList(this.columns); 
+                        this.updateSearchDropdown();
+                      }
+
+// 🚀 NUEVA FUNCIÓN: Actualiza el selector de búsqueda dinámico
+  updateSearchDropdown() {
+    if (!this.els.globalSearch) return;
+    
+    // Si el selector no existe en el HTML, lo fabricamos e inyectamos al vuelo
+    if (!this.els.searchColumn) {
+       const select = document.createElement("select");
+       select.id = "searchColumn";
+       select.className = "form-select form-input-sm";
+       select.style.marginRight = "8px";
+       select.style.maxWidth = "200px";
+       select.style.display = "inline-block";
+       
+       this.els.globalSearch.parentNode.insertBefore(select, this.els.globalSearch);
+       this.els.searchColumn = select;
+       
+       // Si cambias de columna, rehace la búsqueda automáticamente
+       this.els.searchColumn.addEventListener("change", () => {
+           this.currentPage = 1;
+           this.processData();
+       });
+    }
+
+    // Actualizamos las opciones basándonos en las columnas visibles
+    const currentVal = this.els.searchColumn.value;
+    this.els.searchColumn.innerHTML = '<option value="all">🔍 Todas las columnas</option>';
+    
+    const visibleCols = this.columns.filter(c => !this.colSettings[c].hidden);
+    visibleCols.forEach(c => {
+       const opt = document.createElement('option');
+       opt.value = c;
+       opt.innerText = `En: ${c}`;
+       this.els.searchColumn.appendChild(opt);
+    });
+    
+    // Si la columna que estabas buscando se ocultó, vuelve a "Todas"
+    if (visibleCols.includes(currentVal)) {
+        this.els.searchColumn.value = currentVal;
+    } else {
+        this.els.searchColumn.value = "all";
+    }
+  }
+  
   renderColumnList(cols) {
     this.els.colListContainer.innerHTML = "";
     cols.forEach((col) => {
