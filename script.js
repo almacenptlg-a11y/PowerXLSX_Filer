@@ -1708,9 +1708,16 @@ if (typeof val === "string" && config.textStyle && config.textStyle !== "none") 
         }
     }
    
-    // Enlaces
+    // 🚀 NUEVO: Enmascaramiento Inteligente de Enlaces
     if (type === "link" || (typeof val === "string" && val.startsWith("http"))) {
-      return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${val}</a>`;
+      let displayTxt = val; // Por defecto muestra la URL larga
+      
+      if (config.linkMode === 'fixed' && config.linkText) {
+          displayTxt = config.linkText; // Ej: "Ver Documento"
+      } else if (config.linkMode === 'column' && config.linkCol && row && row[config.linkCol]) {
+          displayTxt = row[config.linkCol]; // Ej: Muestra el Código del Producto
+      }
+      return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${this.escapeHTML(displayTxt)}</a>`;
     }
 
     // Procesamiento de Textos y Códigos
@@ -1784,17 +1791,7 @@ if (typeof val === "string" && config.textStyle && config.textStyle !== "none") 
       return numVal.toLocaleString("es-PE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     }
 
-   // 🚀 NUEVO: Enmascaramiento Inteligente de Enlaces
-    if (type === "link" || (typeof val === "string" && val.startsWith("http"))) {
-      let displayTxt = val; // Por defecto muestra la URL larga
-      
-      if (config.linkMode === 'fixed' && config.linkText) {
-          displayTxt = config.linkText; // Ej: "Ver Documento"
-      } else if (config.linkMode === 'column' && config.linkCol && row && row[config.linkCol]) {
-          displayTxt = row[config.linkCol]; // Ej: Muestra el Código del Producto
-      }
-      return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${this.escapeHTML(displayTxt)}</a>`;
-    }
+  
     // Por defecto, lo que quede se devuelve normal
     return String(val);
   }
