@@ -876,7 +876,7 @@ renderMenuContent(col, container) {
       </div>`;
 
     // 6. MAYÚSCULAS Y MINÚSCULAS (Solo textos, códigos, enlaces y fechas)
-    if (["text", , "date", "link"].includes(settings.type)) {
+    if (["text", "date", "link"].includes(settings.type)) {
         extraControls += `
           <div style="margin-top:8px">
             <label class="col-menu-label" style="margin-bottom:2px">Mayús / Minús</label>
@@ -1690,58 +1690,51 @@ setLoading(v) {
     return "";
   }
 
- formatValue(val, config, row = null) {
+formatValue(val, config, row = null) {
     const type = config.type;
     const decimals = config.decimals !== undefined ? config.decimals : 2;
     const curr = config.currency || "PEN";
 
     if (val === null || val === undefined || val === "") return "";
 
-if (typeof val === "string" && config.textStyle && config.textStyle !== "none") {
+    // 1. MAYÚSCULAS Y MINÚSCULAS
+    if (typeof val === "string" && config.textStyle && config.textStyle !== "none") {
         if (config.textStyle === "uppercase") {
             val = val.toUpperCase();
         } else if (config.textStyle === "lowercase") {
             val = val.toLowerCase();
         } else if (config.textStyle === "capitalize") {
-            // Convierte todo a minúscula primero, y luego hace mayúscula la primera letra de cada palabra
             val = val.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
         }
     }
-   
-    // 🚀 NUEVO: Enmascaramiento Inteligente de Enlaces
+    
+    // 2. 🚀 ENLACES (Aquí está la magia corregida y unificada)
     if (type === "link" || (typeof val === "string" && val.startsWith("http"))) {
       let displayTxt = val; // Por defecto muestra la URL larga
       
+      // Aplicar máscara si el usuario lo configuró
       if (config.linkMode === 'fixed' && config.linkText) {
           displayTxt = config.linkText; // Ej: "Ver Documento"
-      } else if (config.linkMode === 'column' && config.linkCol && row && row[config.linkCol]) {
+      } else if (config.linkMode === 'column' && config.linkCol && row && row[config.linkCol] !== undefined) {
           displayTxt = row[config.linkCol]; // Ej: Muestra el Código del Producto
       }
       return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${this.escapeHTML(displayTxt)}</a>`;
     }
 
-    // Procesamiento de Textos y Códigos
+    // 3. TEXTOS Y CÓDIGOS
     if (type === "text" || type === "code") {
       let strVal = String(val);
-      // Solo rellena ceros si explícitamente es formato Código
       if (type === "code" && config.padZeros > 0) {
           strVal = strVal.padStart(config.padZeros, '0');
       }
       return strVal;
     }
 
-    // --- PROCESAMIENTO DE FECHAS ---
+    // 4. FECHAS
     if (type === "date" || type === "datetime" || type === "time" || val instanceof Date) {
       try {
-        let d;
-        if (val instanceof Date) {
-          d = val;
-        } else {
-          d = new Date(val); 
-        }
-
+        let d = val instanceof Date ? val : new Date(val); 
         if (isNaN(d.getTime())) return val;
-
         if (type === "time") return d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
 
         const opts = {};
@@ -1750,49 +1743,32 @@ if (typeof val === "string" && config.textStyle && config.textStyle !== "none") 
         if (style === "short") { opts.day = "2-digit"; opts.month = "2-digit"; opts.year = "numeric"; }
         else if (style === "medium") { opts.day = "numeric"; opts.month = "short"; opts.year = "numeric"; }
         else if (style === "long") { opts.day = "numeric"; opts.month = "long"; opts.year = "numeric"; }
-        else if (style === "full") { 
-          opts.weekday = "long"; opts.day = "numeric"; opts.month = "long"; opts.year = "numeric"; 
-        }
+        else if (style === "full") { opts.weekday = "long"; opts.day = "numeric"; opts.month = "long"; opts.year = "numeric"; }
 
-        if (type === "datetime") { 
-          opts.hour = "2-digit"; 
-          opts.minute = "2-digit"; 
-        }
-
+        if (type === "datetime") { opts.hour = "2-digit"; opts.minute = "2-digit"; }
         return d.toLocaleString("es-PE", opts);
-      } catch (e) {
-        return val;
-      }
+      } catch (e) { return val; }
     }
 
-    // --- PROCESAMIENTO DE NÚMEROS (Moneda, Porcentaje, Enteros) ---
+    // 5. NÚMEROS (Monedas, Porcentajes, Enteros)
     if (["number", "currency", "percent", "integer"].includes(type)) {
-      // Forzamos la conversión a número, limpiando posibles comas del CSV
       let numVal = typeof val === "number" ? val : parseFloat(String(val).replace(/,/g, '').trim());
-      
       if (isNaN(numVal)) return val;
 
-      if (type === "currency") {
-        return numVal.toLocaleString("es-PE", { style: "currency", currency: curr, minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-      }
-      
+      if (type === "currency") return numVal.toLocaleString("es-PE", { style: "currency", currency: curr, minimumFractionDigits: decimals, maximumFractionDigits: decimals });
       if (type === "percent") {
         const pctVal = numVal > 1 ? numVal / 100 : numVal;
         return pctVal.toLocaleString("es-PE", { style: "percent", minimumFractionDigits: decimals, maximumFractionDigits: decimals });
       }
-      
-     if (type === "integer") {
+      if (type === "integer") {
         let intStr = parseInt(numVal).toString();
-        // Restauramos la lógica de retorno y relleno de ceros
         if (config.padZeros > 0) return intStr.padStart(config.padZeros, '0');
         return parseInt(numVal).toLocaleString("es-PE");
       }
-      
       return numVal.toLocaleString("es-PE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     }
-
-  
-    // Por defecto, lo que quede se devuelve normal
+    
+    // Por defecto
     return String(val);
   }
 
