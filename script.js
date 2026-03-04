@@ -113,10 +113,31 @@ class DataViewerApp {
       this.render();
     });
 
+   // =================================================================
+    // 🚀 BUSCADOR OPTIMIZADO (DEBOUNCE)
+    // =================================================================
+    let searchTimeout;
     this.els.globalSearch.addEventListener("input", (e) => {
-      this.searchQuery = e.target.value.toLowerCase();
-      this.currentPage = 1;
-      this.processData();
+      // 1. Cancelamos la búsqueda anterior si el usuario sigue tecleando
+      clearTimeout(searchTimeout);
+      
+      // 2. Mostramos el ícono de carga para darle feedback visual inmediato
+      this.setLoading(true);
+      const loadingText = this.els.loadingState.querySelector("p");
+      if(loadingText) loadingText.innerText = "Buscando coincidencias...";
+
+      // 3. Esperamos 350 milisegundos después de que deje de teclear
+      searchTimeout = setTimeout(() => {
+        this.searchQuery = e.target.value.toLowerCase();
+        this.currentPage = 1;
+        
+        // Usamos un pequeñísimo retardo (10ms) para permitir que el navegador 
+        // dibuje la pantalla de carga antes de congelarse procesando los datos
+        setTimeout(() => {
+            this.processData();
+            this.setLoading(false);
+        }, 10);
+      }, 350); 
     });
 
     document.getElementById("btnCloseSheetModal").addEventListener("click", () => {
@@ -524,12 +545,22 @@ class DataViewerApp {
       });
     });
 
+ // --- BUSCADOR GLOBAL ULTRARRÁPIDO ---
     if (this.searchQuery) {
+      // 1. Pre-calculamos las columnas visibles UNA SOLA VEZ, no 400,000 veces
+      const visibleCols = this.columns.filter(col => !this.colSettings[col].hidden);
+      const query = this.searchQuery;
+
       processed = processed.filter((row) => {
-        return Object.entries(row).some(([key, val]) => {
-          if (this.colSettings[key].hidden) return false;
-          return String(val).toLowerCase().includes(this.searchQuery);
-        });
+        // 2. Usamos un ciclo 'for' clásico. Es la estructura de código más rápida de JavaScript.
+        for (let i = 0; i < visibleCols.length; i++) {
+          const val = row[visibleCols[i]];
+          if (val !== null && val !== undefined && val !== "") {
+             // Si encuentra coincidencia, aprueba la fila y rompe el ciclo para ahorrar tiempo
+             if (String(val).toLowerCase().includes(query)) return true;
+          }
+        }
+        return false;
       });
     }
 
