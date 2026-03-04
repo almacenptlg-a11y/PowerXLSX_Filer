@@ -615,7 +615,7 @@ class DataViewerApp {
     }
   }
 
-  renderHeaders() {
+ renderHeaders() {
     this.els.thead.innerHTML = "";
     const tr = document.createElement("tr");
 
@@ -630,14 +630,20 @@ class DataViewerApp {
       const iconClass = isSorted ? (this.sortAsc ? "ph-arrow-up" : "ph-arrow-down") : "";
       const safeCol = String(col).replace(/'/g, "\\'");
 
+      // HTML del Encabezado con el nuevo botón btn-col-hide
       th.innerHTML = `
         <div class="th-content ${alignClass}">
-          <div class="btn-col-menu ${hasFilter ? "active" : ""}" onclick="app.openColumnMenu(event, '${safeCol}')">
+          <div class="btn-col-menu ${hasFilter ? "active" : ""}" onclick="app.openColumnMenu(event, '${safeCol}')" title="Formato y Filtros">
              <i class="ph ${hasFilter ? "ph-funnel ph-fill" : "ph-dots-three-vertical"}"></i>
           </div>
-          <div class="th-title" onclick="app.sortBy('${safeCol}')">
+          
+          <div class="th-title" onclick="app.sortBy('${safeCol}')" style="flex-grow: 1; display: flex; justify-content: ${alignClass === 'text-right' ? 'flex-end' : alignClass === 'text-center' ? 'center' : 'flex-start'};">
             <span>${col}</span>
             ${isSorted ? `<i class="ph ${iconClass} sort-icon"></i>` : ""}
+          </div>
+          
+          <div class="btn-col-hide" onclick="app.hideColumn(event, '${safeCol}')" title="Ocultar esta columna">
+             <i class="ph ph-eye-slash"></i>
           </div>
         </div>
       `;
@@ -646,6 +652,26 @@ class DataViewerApp {
     this.els.thead.appendChild(tr);
   }
 
+// 🚀 NUEVA FUNCIÓN: Oculta la columna al instante
+  hideColumn(e, col) {
+    e.stopPropagation(); // Evita que la tabla se ordene al hacer clic
+    
+    // 1. Apagamos la columna
+    this.colSettings[col].hidden = true;
+    
+    // 2. Guardamos la preferencia
+    this.savePreferences();
+    
+    // 3. Actualizamos el selector de columnas (el menú principal)
+    this.buildColumnPicker();
+    
+    // 4. Redibujamos la tabla sin esa columna
+    this.processData();
+    
+    // 5. Feedback visual amigable
+    this.showToast(`Columna "${col}" ocultada.`, "info");
+  }
+  
   render() {
     this.els.tbody.innerHTML = "";
     const start = (this.currentPage - 1) * this.pageSize;
