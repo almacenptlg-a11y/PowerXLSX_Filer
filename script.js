@@ -1108,7 +1108,7 @@ renderMenuContent(col, container) {
                         this.updateSearchDropdown();
                       }
 
-// 🚀 NUEVA FUNCIÓN: Actualiza el selector de búsqueda dinámico
+// 🚀 ACTUALIZADO: Selector dinámico con diseño de píldora
   updateSearchDropdown() {
     if (!this.els.globalSearch) return;
     
@@ -1116,10 +1116,10 @@ renderMenuContent(col, container) {
     if (!this.els.searchColumn) {
        const select = document.createElement("select");
        select.id = "searchColumn";
-       select.className = "form-select form-input-sm";
-       select.style.marginRight = "8px";
-       select.style.maxWidth = "200px";
-       select.style.display = "inline-block";
+       // 👇 Aplicamos la nueva clase de diseño premium
+       select.className = "modern-search-select"; 
+       select.style.marginRight = "12px";
+       select.style.maxWidth = "220px";
        
        this.els.globalSearch.parentNode.insertBefore(select, this.els.globalSearch);
        this.els.searchColumn = select;
@@ -1133,6 +1133,8 @@ renderMenuContent(col, container) {
 
     // Actualizamos las opciones basándonos en las columnas visibles
     const currentVal = this.els.searchColumn.value;
+    
+    // Un texto más limpio para la opción principal
     this.els.searchColumn.innerHTML = '<option value="all">🔍 Todas las columnas</option>';
     
     const visibleCols = this.columns.filter(c => !this.colSettings[c].hidden);
