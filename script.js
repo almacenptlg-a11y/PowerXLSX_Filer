@@ -1108,44 +1108,43 @@ renderMenuContent(col, container) {
                         this.updateSearchDropdown();
                       }
 
-// 🚀 ACTUALIZADO: Selector dinámico con diseño de píldora
+// 🚀 ACTUALIZADO: Diseño Unificado (Input Group)
   updateSearchDropdown() {
     if (!this.els.globalSearch) return;
     
-    // Si el selector no existe en el HTML, lo fabricamos e inyectamos al vuelo
+    // Convertimos el contenedor padre en una caja unificada
+    const wrapper = this.els.globalSearch.parentNode;
+    wrapper.classList.add("search-unified-wrapper");
+
+    // Si el selector no existe, lo creamos
     if (!this.els.searchColumn) {
        const select = document.createElement("select");
        select.id = "searchColumn";
-       // 👇 Aplicamos la nueva clase de diseño premium
        select.className = "modern-search-select"; 
-       select.style.marginRight = "12px";
-       select.style.maxWidth = "220px";
+       select.style.maxWidth = "220px"; // Ancho máximo
        
-       this.els.globalSearch.parentNode.insertBefore(select, this.els.globalSearch);
+       wrapper.insertBefore(select, this.els.globalSearch);
        this.els.searchColumn = select;
        
-       // Si cambias de columna, rehace la búsqueda automáticamente
-       this.els.searchColumn.addEventListener("change", () => {
+       select.addEventListener("change", () => {
            this.currentPage = 1;
            this.processData();
        });
     }
 
-    // Actualizamos las opciones basándonos en las columnas visibles
     const currentVal = this.els.searchColumn.value;
     
-    // Un texto más limpio para la opción principal
-    this.els.searchColumn.innerHTML = '<option value="all">🔍 Todas las columnas</option>';
+    // Texto exacto como en tu captura de pantalla
+    this.els.searchColumn.innerHTML = '<option value="all">Todas las columnas</option>';
     
     const visibleCols = this.columns.filter(c => !this.colSettings[c].hidden);
     visibleCols.forEach(c => {
        const opt = document.createElement('option');
        opt.value = c;
-       opt.innerText = `En: ${c}`;
+       opt.innerText = c; // Quitamos el prefijo "En:" para que luzca limpio
        this.els.searchColumn.appendChild(opt);
     });
     
-    // Si la columna que estabas buscando se ocultó, vuelve a "Todas"
     if (visibleCols.includes(currentVal)) {
         this.els.searchColumn.value = currentVal;
     } else {
