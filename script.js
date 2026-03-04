@@ -1568,7 +1568,18 @@ renderMenuContent(col, container) {
     const curr = config.currency || "PEN";
 
     if (val === null || val === undefined || val === "") return "";
-    
+
+if (typeof val === "string" && config.textStyle && config.textStyle !== "none") {
+        if (config.textStyle === "uppercase") {
+            val = val.toUpperCase();
+        } else if (config.textStyle === "lowercase") {
+            val = val.toLowerCase();
+        } else if (config.textStyle === "capitalize") {
+            // Convierte todo a minúscula primero, y luego hace mayúscula la primera letra de cada palabra
+            val = val.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+        }
+    }
+   
     // Enlaces
     if (type === "link" || (typeof val === "string" && val.startsWith("http"))) {
       return `<a href="${val}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:underline;">${val}</a>`;
