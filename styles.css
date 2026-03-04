@@ -1366,50 +1366,91 @@ thead th:hover .btn-col-hide {
 }
 
 /* ==============================================================
-   🌟 SELECTOR DE BÚSQUEDA MODERNO (Estilo Píldora)
+   🌟 SELECTOR Y BUSCADOR UNIFICADOS (Estilo ERP Moderno)
    ============================================================== */
+
+/* 1. La caja principal que agrupa ambos elementos */
+.search-unified-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px; /* Bordes redondeados suaves como en tu foto */
+  overflow: hidden; /* Corta todo lo que se salga, clave para el efecto unido */
+  height: 38px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+/* 2. El diseño del Selector (Lado Izquierdo) */
 .modern-search-select {
   appearance: none;
   -webkit-appearance: none;
-  background-color: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 99px; /* Aspecto de píldora redondeada */
-  padding: 8px 36px 8px 16px;
-  font-size: 13px;
+  background-color: transparent;
+  border: none;
+  border-right: 1px solid var(--border); /* Esta es la línea divisoria vertical */
+  border-radius: 0; /* Quitamos bordes curvos internos */
+  padding: 0 32px 0 16px;
+  height: 100%;
+  font-size: 13.5px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-main);
   cursor: pointer;
   outline: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  
-  /* Ícono de flecha personalizado inyectado directamente */
+  box-shadow: none;
+  /* Flechita SVG a la derecha */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2364748b' viewBox='0 0 256 256'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 14px center;
-  
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  background-position: right 12px center;
+  transition: background-color 0.2s;
 }
 
 .modern-search-select:hover {
+  background-color: rgba(0,0,0,0.03); /* Ligero sombreado al pasar el ratón */
   color: var(--primary);
-  border-color: var(--primary);
-  /* La flecha se oscurece al pasar el ratón */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%230f172a' viewBox='0 0 256 256'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E");
 }
 
 .modern-search-select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+  background-color: rgba(14, 165, 233, 0.05);
 }
 
-/* Soporte inteligente para tu Modo Oscuro */
+/* 3. El diseño del buscador de texto (Lado Derecho) */
+.search-unified-wrapper input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 16px !important;
+  height: 100% !important;
+  flex-grow: 1 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 14px;
+}
+
+/* Soporte automático para tu Modo Oscuro */
 [data-theme='dark'] .modern-search-select {
-  background-color: var(--bg-card);
   color: var(--text-main);
-  border-color: var(--border);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 256 256'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* Override Responsivo: En celulares se apilan uno encima del otro */
+@media (max-width: 768px) {
+  .search-unified-wrapper {
+    flex-direction: column;
+    height: auto;
+    border-radius: 8px;
+  }
+  .modern-search-select {
+    border-right: none;
+    border-bottom: 1px solid var(--border); /* El divisor ahora es horizontal */
+    width: 100%;
+    height: 42px;
+  }
+  .search-unified-wrapper input {
+    height: 42px !important;
+    width: 100% !important;
+    text-align: center;
+  }
 }
 
 /* ==============================================================
