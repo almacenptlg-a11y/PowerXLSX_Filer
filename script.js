@@ -1135,7 +1135,7 @@ renderMenuContent(col, container) {
     const currentVal = this.els.searchColumn.value;
     
     // Texto exacto como en tu captura de pantalla
-    this.els.searchColumn.innerHTML = '<option value="all">Todas las columnas</option>';
+    this.els.searchColumn.innerHTML = '<option value="all">Todas</option>';
     
     const visibleCols = this.columns.filter(c => !this.colSettings[c].hidden);
     visibleCols.forEach(c => {
