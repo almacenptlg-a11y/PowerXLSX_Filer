@@ -1185,6 +1185,7 @@ renderMenuContent(col, container) {
     const author = this.els.reportAuthor.value.trim();
     const timestamp = new Date().toLocaleString("es-PE");
 
+    // 1. PREPARACIÓN DE DATOS (Arreglo para PDF y Excel)
     const exportData = this.visibleData.map((row) => {
       const newRow = {};
       this.columns.forEach((col) => {
@@ -1193,21 +1194,57 @@ renderMenuContent(col, container) {
         const config = this.colSettings[col];
         
         if (format === "xlsx") {
-           newRow[col] = config.type === "text" ? String(val) : val;
+           // 🚀 CORRECCIÓN EXCEL: Si es un enlace, exportamos la máscara de texto
+           if (config.type === "link") {
+               let displayTxt = val;
+               if (config.linkMode === 'fixed' && config.linkText) {
+                   displayTxt = config.linkText;
+               } else if (config.linkMode === 'column' && config.linkCol && row[config.linkCol] !== undefined) {
+                   displayTxt = row[config.linkCol];
+               }
+               newRow[col] = displayTxt;
+           } else {
+               newRow[col] = config.type === "text" ? String(val) : val;
+           }
         } else {
           const d = document.createElement("div");
-          d.innerHTML = this.formatValue(val, config);
+          // 🚀 CORRECCIÓN PDF: Pasamos la variable 'row' para que la máscara funcione
+          d.innerHTML = this.formatValue(val, config, row);
           newRow[col] = d.textContent.trim();
         }
       });
       return newRow;
     });
 
+    // 2. GENERACIÓN DE ARCHIVOS
     if (format === "xlsx") {
       const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // 🚀 MAGIA EXCEL: Re-conectar las URLs ocultas para que sean clickeables
+      let rowIndex = 1; // La fila 0 son los encabezados
+      this.visibleData.forEach((row) => {
+         let colIndex = 0;
+         this.columns.forEach((col) => {
+            if (this.colSettings[col].hidden) return;
+            const config = this.colSettings[col];
+            
+            // Si la columna es tipo enlace y tiene datos
+            if (config.type === "link" && row[col]) {
+                const cellRef = XLSX.utils.encode_cell({r: rowIndex, c: colIndex});
+                if (ws[cellRef]) {
+                    // Inyectamos el atributo de hipervínculo nativo de SheetJS
+                    ws[cellRef].l = { Target: row[col] };
+                }
+            }
+            colIndex++;
+         });
+         rowIndex++;
+      });
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Data");
       XLSX.writeFile(wb, `${fname}.xlsx`);
+      
     } else if (format === "pdf") {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape" });
@@ -1215,6 +1252,7 @@ renderMenuContent(col, container) {
       doc.setFontSize(10); doc.setTextColor(100); doc.text(`Autor: ${author} | ${timestamp}`, 14, 22);
       doc.autoTable({ head: [Object.keys(exportData[0])], body: exportData.map(Object.values), startY: 28, theme: "grid", styles: { fontSize: 8 }, headStyles: { fillColor: [59, 130, 246] } });
       doc.save(`${fname}.pdf`);
+      
     } else if (format === "html") {
       let rowsHtmlArray = [];
       let totalRowHtml = "";
