@@ -1246,78 +1246,98 @@ renderMenuContent(col, container) {
       XLSX.writeFile(wb, `${fname}.xlsx`);
       
    } else if (format === "pdf") {
+      // 🚀 PDF CON DISEÑO EDITORIAL Y TOTALES
       const { jsPDF } = window.jspdf;
-      
-      // 1. PARÁMETROS DE IMPRESIÓN PROFESIONALES
-      // Formato A4, orientación Horizontal (landscape), medidas en milímetros
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-      
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
 
-      // 2. CABECERA DEL REPORTE (Header)
-      // Título Principal
+      // Cabecera
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.setTextColor(15, 23, 42); // slate-900 (Gris muy oscuro, elegante)
+      doc.setTextColor(15, 23, 42); // slate-900
       doc.text(fname, 14, 20);
 
-      // Metadatos (Autor y Fecha)
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(100, 116, 139); // slate-500
       doc.text(`Generado por: ${author}`, 14, 27);
       doc.text(`Fecha: ${timestamp}`, 14, 32);
       
-      // Branding del Sistema alineado a la derecha
+      // Branding GenFiler ONE
       doc.setFont("helvetica", "bolditalic");
       doc.setFontSize(12);
-      doc.setTextColor(14, 165, 233); // Color acento primario (sky-500)
+      doc.setTextColor(14, 165, 233); // sky-500
       doc.text("GenFiler ONE", pageWidth - 14, 20, { align: "right" });
       
-      // Línea separadora sutil debajo de la cabecera
       doc.setDrawColor(226, 232, 240); // slate-200
       doc.setLineWidth(0.5);
       doc.line(14, 36, pageWidth - 14, 36);
 
-      // 3. ESTILOS DE LA TABLA Y RENDERIZADO
+      // Ensamblar fila de Totales
+      let pdfFoot = [];
+      if (hasTotals) {
+        const footRow = [];
+        let firstCol = true;
+        this.columns.forEach((col) => {
+          if (this.colSettings[col].hidden) return;
+          if (firstCol) {
+            footRow.push("TOTALES");
+            firstCol = false;
+          } else if (totalsMap[col] !== undefined) {
+             const config = this.colSettings[col];
+             const d = document.createElement("div");
+             d.innerHTML = this.formatValue(totalsMap[col], config);
+             footRow.push(d.textContent.trim());
+          } else {
+            footRow.push("");
+          }
+        });
+        pdfFoot.push(footRow);
+      }
+
+      // Dibujar Tabla
       doc.autoTable({
         head: [Object.keys(exportData[0])],
         body: exportData.map(Object.values),
-        startY: 42, // Comienza justo debajo de la línea separadora
+        foot: pdfFoot,
+        startY: 42, 
         theme: "grid",
         styles: { 
             font: "helvetica",
             fontSize: 8,
             cellPadding: 3,
-            lineColor: [226, 232, 240], // Bordes suaves
+            lineColor: [226, 232, 240], 
             lineWidth: 0.1,
-            overflow: "linebreak" // Vital: envuelve el texto si es muy largo
+            overflow: "linebreak" 
         },
         headStyles: { 
-            fillColor: [15, 23, 42], // Fondo oscuro para cabeceras (estilo moderno)
+            fillColor: [15, 23, 42], // Fondo oscuro para cabecera
             textColor: [255, 255, 255],
             fontStyle: "bold",
-            halign: "center" // Centrar títulos
+            halign: "center" 
+        },
+        footStyles: {
+            fillColor: [241, 245, 249], // Fondo gris claro para totales
+            textColor: [14, 165, 233],  // Texto azul (sky-500)
+            fontStyle: "bold"
         },
         alternateRowStyles: {
-            fillColor: [248, 250, 252] // Zebra striping (filas alternas en gris muy claro)
+            fillColor: [248, 250, 252] // Zebra striping
         },
-        
-        // 4. PIE DE PÁGINA DINÁMICO (Paginación)
         didDrawPage: function (data) {
-            // Calcula y dibuja "Página X" centrado en la parte inferior
+            // Paginación en cada hoja
             const str = "Página " + doc.internal.getNumberOfPages();
             doc.setFontSize(9);
             doc.setFont("helvetica", "normal");
-            doc.setTextColor(148, 163, 184); // slate-400
+            doc.setTextColor(148, 163, 184); 
             doc.text(str, pageWidth / 2, pageHeight - 10, { align: "center" });
         }
       });
 
       doc.save(`${fname}.pdf`);
       
-    } else if (format === "html") { 
+    } else if (format === "html") {
       let rowsHtmlArray = [];
       let totalRowHtml = "";
       const totals = {};
