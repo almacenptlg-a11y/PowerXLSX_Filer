@@ -1245,14 +1245,14 @@ renderMenuContent(col, container) {
       XLSX.utils.book_append_sheet(wb, ws, "Data");
       XLSX.writeFile(wb, `${fname}.xlsx`);
       
-   } else if (format === "pdf") {
-      // 🚀 PDF CON DISEÑO EDITORIAL Y TOTALES
+  } else if (format === "pdf") {
+      // 🚀 PDF CON DISEÑO EDITORIAL, TOTALES Y ALINEACIÓN INTELIGENTE
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
 
-      // Cabecera
+      // 1. Cabecera (Branding y Metadatos)
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(15, 23, 42); // slate-900
@@ -1264,7 +1264,6 @@ renderMenuContent(col, container) {
       doc.text(`Generado por: ${author}`, 14, 27);
       doc.text(`Fecha: ${timestamp}`, 14, 32);
       
-      // Branding GenFiler ONE
       doc.setFont("helvetica", "bolditalic");
       doc.setFontSize(12);
       doc.setTextColor(14, 165, 233); // sky-500
@@ -1274,7 +1273,7 @@ renderMenuContent(col, container) {
       doc.setLineWidth(0.5);
       doc.line(14, 36, pageWidth - 14, 36);
 
-      // Ensamblar fila de Totales
+      // 2. Ensamblar Fila de Totales
       let pdfFoot = [];
       if (hasTotals) {
         const footRow = [];
@@ -1296,13 +1295,29 @@ renderMenuContent(col, container) {
         pdfFoot.push(footRow);
       }
 
-      // Dibujar Tabla
+      // 3. Configurar Alineación de Columnas Dinámica
+      // Mapeamos qué columnas son números para alinearlas a la derecha
+      const columnStylesConfig = {};
+      let visibleColIndex = 0;
+      this.columns.forEach((col) => {
+          if (this.colSettings[col].hidden) return;
+          const config = this.colSettings[col];
+          const isNum = ["number", "currency", "integer", "percent"].includes(config.type);
+          let align = isNum ? "right" : "left";
+          if (config.align && config.align !== "auto") align = config.align;
+          
+          columnStylesConfig[visibleColIndex] = { halign: align };
+          visibleColIndex++;
+      });
+
+      // 4. Dibujar Tabla con AutoTable
       doc.autoTable({
         head: [Object.keys(exportData[0])],
         body: exportData.map(Object.values),
         foot: pdfFoot,
         startY: 42, 
         theme: "grid",
+        columnStyles: columnStylesConfig, // Aplica la alineación derecha/izquierda
         styles: { 
             font: "helvetica",
             fontSize: 8,
@@ -1312,21 +1327,21 @@ renderMenuContent(col, container) {
             overflow: "linebreak" 
         },
         headStyles: { 
-            fillColor: [15, 23, 42], // Fondo oscuro para cabecera
+            fillColor: [15, 23, 42], // Fondo oscuro corporativo
             textColor: [255, 255, 255],
             fontStyle: "bold",
-            halign: "center" 
+            halign: "center" // Cabeceras siempre centradas
         },
         footStyles: {
-            fillColor: [241, 245, 249], // Fondo gris claro para totales
-            textColor: [14, 165, 233],  // Texto azul (sky-500)
+            fillColor: [241, 245, 249], // Gris claro para destacar
+            textColor: [14, 165, 233],  // Texto azul primario
             fontStyle: "bold"
         },
         alternateRowStyles: {
-            fillColor: [248, 250, 252] // Zebra striping
+            fillColor: [248, 250, 252] // Gris levísimo intermedio
         },
         didDrawPage: function (data) {
-            // Paginación en cada hoja
+            // Footer: Número de página
             const str = "Página " + doc.internal.getNumberOfPages();
             doc.setFontSize(9);
             doc.setFont("helvetica", "normal");
