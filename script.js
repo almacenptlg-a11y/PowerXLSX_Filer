@@ -1179,13 +1179,13 @@ renderMenuContent(col, container) {
     this.els.exportModal.classList.add("active");
   }
 
-  executeExport(format) {
+ executeExport(format) {
     let fname = this.els.reportTitle.value.trim() || "Reporte";
     fname = fname.replace(/[^a-z0-9_\-\sáéíóúñ]/gi, "_");
     const author = this.els.reportAuthor.value.trim();
     const timestamp = new Date().toLocaleString("es-PE");
 
-    // 1. PREPARACIÓN DE DATOS (Arreglo para PDF y Excel)
+    // 1. PREPARACIÓN DE DATOS BASE
     const exportData = this.visibleData.map((row) => {
       const newRow = {};
       this.columns.forEach((col) => {
@@ -1194,7 +1194,7 @@ renderMenuContent(col, container) {
         const config = this.colSettings[col];
         
         if (format === "xlsx") {
-           // 🚀 CORRECCIÓN EXCEL: Si es un enlace, exportamos la máscara de texto
+           // EXCEL: Resuelve enlaces enmascarados
            if (config.type === "link") {
                let displayTxt = val;
                if (config.linkMode === 'fixed' && config.linkText) {
@@ -1207,8 +1207,8 @@ renderMenuContent(col, container) {
                newRow[col] = config.type === "text" ? String(val) : val;
            }
         } else {
+          // PDF / HTML: Aplica formatos visuales (monedas, fechas, mayúsculas)
           const d = document.createElement("div");
-          // 🚀 CORRECCIÓN PDF: Pasamos la variable 'row' para que la máscara funcione
           d.innerHTML = this.formatValue(val, config, row);
           newRow[col] = d.textContent.trim();
         }
@@ -1216,25 +1216,22 @@ renderMenuContent(col, container) {
       return newRow;
     });
 
-    // 2. GENERACIÓN DE ARCHIVOS
+    // ==========================================
+    // 📊 EXPORTACIÓN A EXCEL (.xlsx)
+    // ==========================================
     if (format === "xlsx") {
       const ws = XLSX.utils.json_to_sheet(exportData);
       
-      // 🚀 MAGIA EXCEL: Re-conectar las URLs ocultas para que sean clickeables
-      let rowIndex = 1; // La fila 0 son los encabezados
+      // MAGIA EXCEL: Re-conectar las URLs ocultas para que sean clickeables
+      let rowIndex = 1; // Fila 0 son encabezados
       this.visibleData.forEach((row) => {
          let colIndex = 0;
          this.columns.forEach((col) => {
             if (this.colSettings[col].hidden) return;
             const config = this.colSettings[col];
-            
-            // Si la columna es tipo enlace y tiene datos
             if (config.type === "link" && row[col]) {
                 const cellRef = XLSX.utils.encode_cell({r: rowIndex, c: colIndex});
-                if (ws[cellRef]) {
-                    // Inyectamos el atributo de hipervínculo nativo de SheetJS
-                    ws[cellRef].l = { Target: row[col] };
-                }
+                if (ws[cellRef]) ws[cellRef].l = { Target: row[col] };
             }
             colIndex++;
          });
@@ -1245,37 +1242,60 @@ renderMenuContent(col, container) {
       XLSX.utils.book_append_sheet(wb, ws, "Data");
       XLSX.writeFile(wb, `${fname}.xlsx`);
       
-  } else if (format === "pdf") {
-      // 🚀 PDF CON DISEÑO EDITORIAL, TOTALES Y ALINEACIÓN INTELIGENTE
+    // ==========================================
+    // 📄 EXPORTACIÓN A PDF (.pdf)
+    // ==========================================
+    } else if (format === "pdf") {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
 
-      // 1. Cabecera (Branding y Metadatos)
+      // Cabecera Editorial
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.setTextColor(15, 23, 42); // slate-900
+      doc.setTextColor(15, 23, 42); 
       doc.text(fname, 14, 20);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.setTextColor(100, 116, 139); // slate-500
+      doc.setTextColor(100, 116, 139); 
       doc.text(`Generado por: ${author}`, 14, 27);
       doc.text(`Fecha: ${timestamp}`, 14, 32);
       
       doc.setFont("helvetica", "bolditalic");
       doc.setFontSize(12);
-      doc.setTextColor(14, 165, 233); // sky-500
+      doc.setTextColor(14, 165, 233); 
       doc.text("GenFiler ONE", pageWidth - 14, 20, { align: "right" });
       
-      doc.setDrawColor(226, 232, 240); // slate-200
+      doc.setDrawColor(226, 232, 240); 
       doc.setLineWidth(0.5);
       doc.line(14, 36, pageWidth - 14, 36);
 
-      // 2. Ensamblar Fila de Totales
+      // Calcular Totales específicos para el PDF
+      const pdfTotalsMap = {};
+      let pdfHasTotals = false;
+      this.columns.forEach((col) => {
+        if (this.colSettings[col].hidden) return;
+        if (["number", "currency", "integer", "percent"].includes(this.colSettings[col].type)) {
+          pdfTotalsMap[col] = 0;
+          pdfHasTotals = true;
+        }
+      });
+
+      if (pdfHasTotals) {
+        this.visibleData.forEach((row) => {
+          this.columns.forEach((col) => {
+            if (!this.colSettings[col].hidden && pdfTotalsMap[col] !== undefined) {
+              pdfTotalsMap[col] += parseFloat(row[col]) || 0;
+            }
+          });
+        });
+      }
+
+      // Ensamblar la fila visual de Totales para PDF
       let pdfFoot = [];
-      if (hasTotals) {
+      if (pdfHasTotals) {
         const footRow = [];
         let firstCol = true;
         this.columns.forEach((col) => {
@@ -1283,10 +1303,10 @@ renderMenuContent(col, container) {
           if (firstCol) {
             footRow.push("TOTALES");
             firstCol = false;
-          } else if (totalsMap[col] !== undefined) {
+          } else if (pdfTotalsMap[col] !== undefined) {
              const config = this.colSettings[col];
              const d = document.createElement("div");
-             d.innerHTML = this.formatValue(totalsMap[col], config);
+             d.innerHTML = this.formatValue(pdfTotalsMap[col], config);
              footRow.push(d.textContent.trim());
           } else {
             footRow.push("");
@@ -1295,8 +1315,7 @@ renderMenuContent(col, container) {
         pdfFoot.push(footRow);
       }
 
-      // 3. Configurar Alineación de Columnas Dinámica
-      // Mapeamos qué columnas son números para alinearlas a la derecha
+      // Configurar Alineación Dinámica
       const columnStylesConfig = {};
       let visibleColIndex = 0;
       this.columns.forEach((col) => {
@@ -1310,48 +1329,34 @@ renderMenuContent(col, container) {
           visibleColIndex++;
       });
 
-      // 4. Dibujar Tabla con AutoTable
+      // Renderizar Tabla
       doc.autoTable({
         head: [Object.keys(exportData[0])],
         body: exportData.map(Object.values),
         foot: pdfFoot,
         startY: 42, 
         theme: "grid",
-        columnStyles: columnStylesConfig, // Aplica la alineación derecha/izquierda
+        columnStyles: columnStylesConfig, 
         styles: { 
-            font: "helvetica",
-            fontSize: 8,
-            cellPadding: 3,
-            lineColor: [226, 232, 240], 
-            lineWidth: 0.1,
-            overflow: "linebreak" 
+            font: "helvetica", fontSize: 8, cellPadding: 3,
+            lineColor: [226, 232, 240], lineWidth: 0.1, overflow: "linebreak" 
         },
-        headStyles: { 
-            fillColor: [15, 23, 42], // Fondo oscuro corporativo
-            textColor: [255, 255, 255],
-            fontStyle: "bold",
-            halign: "center" // Cabeceras siempre centradas
-        },
-        footStyles: {
-            fillColor: [241, 245, 249], // Gris claro para destacar
-            textColor: [14, 165, 233],  // Texto azul primario
-            fontStyle: "bold"
-        },
-        alternateRowStyles: {
-            fillColor: [248, 250, 252] // Gris levísimo intermedio
-        },
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: "bold", halign: "center" },
+        footStyles: { fillColor: [241, 245, 249], textColor: [14, 165, 233], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
         didDrawPage: function (data) {
-            // Footer: Número de página
-            const str = "Página " + doc.internal.getNumberOfPages();
             doc.setFontSize(9);
             doc.setFont("helvetica", "normal");
             doc.setTextColor(148, 163, 184); 
-            doc.text(str, pageWidth / 2, pageHeight - 10, { align: "center" });
+            doc.text("Página " + doc.internal.getNumberOfPages(), pageWidth / 2, pageHeight - 10, { align: "center" });
         }
       });
 
       doc.save(`${fname}.pdf`);
-      
+
+    // ==========================================
+    // 🌐 EXPORTACIÓN A HTML INTERACTIVO (.html)
+    // ==========================================
     } else if (format === "html") {
       let rowsHtmlArray = [];
       let totalRowHtml = "";
@@ -1399,6 +1404,7 @@ renderMenuContent(col, container) {
       
       let rowsHtml = rowsHtmlArray.join("");
       let hasTotals = Object.keys(totals).length > 0;
+      
       if (hasTotals) {
         totalRowHtml = '<tr class="row-total">';
         this.columns.forEach((col, idx) => {
@@ -1567,9 +1573,9 @@ renderMenuContent(col, container) {
       a.download = `${fname}.html`;
       a.click();
     }
+    
     this.showToast(`Exportado a ${format.toUpperCase()}`, "success");
   }
-
 
 // --- LÓGICA PERSONALIZADA CSV ALMACÉN PT ---
   openCsvMapper() {
