@@ -875,14 +875,17 @@ tbody tr.row-selected td:first-child {
 
 /* REDISEÑO PREMIUM DE CABECERA (SaaS Style) */
 .premium-header {
-  height: 90px;
-  padding: 0 32px;
+  min-height: 90px; /* Cambiado de height fijo a min-height para que pueda crecer */
+  height: auto;
+  padding: 16px 32px; /* Padding vertical para que respire al saltar de línea */
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; /* 🚀 LA MAGIA: Permite que los elementos salten de línea */
+  gap: 16px; /* Separación cuando los elementos bajan */
 }
 
 /* Línea de gradiente superior decorativa */
@@ -900,15 +903,17 @@ tbody tr.row-selected td:first-child {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1; /* MAGIA: Toma todo el espacio sobrante de la barra */
-  min-width: 0; /* Previene que textos gigantes rompan el flexbox */
-  margin-right: 24px; /* Separación de seguridad con los botones */
+  flex: 1 1 350px; /* Permite crecer y define un ancho base seguro */
+  min-width: 0; 
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 1 1 auto;
+  justify-content: flex-end; /* Mantiene el buscador y botones a la derecha */
+  flex-wrap: wrap; /* Si la pantalla es muy pequeña, los botones también se acomodan */
 }
 
 /* Título Gigante con Gradiente */
@@ -927,7 +932,6 @@ tbody tr.row-selected td:first-child {
   padding: 0;
   border: none;
   background: transparent;
-  /* El Gradiente de texto */
   background-image: linear-gradient(90deg, #0f172a, #3b82f6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -936,6 +940,7 @@ tbody tr.row-selected td:first-child {
   white-space: nowrap;
   overflow: hidden;
 }
+
 @media (max-width: 1024px) {
   .title-input-premium {
     width: 100% !important;
@@ -950,7 +955,6 @@ tbody tr.row-selected td:first-child {
   background-image: linear-gradient(90deg, #f8fafc, #38bdf8);
 }
 
-/* Cuando haces clic para editar el título, se ve normal */
 .title-input-premium:focus {
   -webkit-text-fill-color: var(--text-main);
   background-image: none;
@@ -959,22 +963,17 @@ tbody tr.row-selected td:first-child {
   border-radius: 8px;
   outline: 2px solid #6366f1;
 }
-/* Hacer que el texto de fondo (placeholder) sea más sutil */
+
 .title-input-premium::placeholder {
   color: var(--text-muted);
   opacity: 0.5;
-  -webkit-text-fill-color: rgba(
-    100,
-    116,
-    139,
-    0.5
-  ); /* Sobrescribe el gradiente para el placeholder */
+  -webkit-text-fill-color: rgba(100, 116, 139, 0.5); 
 }
 
 [data-theme="dark"] .title-input-premium::placeholder {
   -webkit-text-fill-color: rgba(148, 163, 184, 0.3);
 }
-/* Autor Sutil */
+
 .author-wrapper-premium {
   display: flex;
   align-items: center;
@@ -1007,6 +1006,49 @@ tbody tr.row-selected td:first-child {
   outline: none;
   color: var(--text-main);
 }
+
+/* ==============================================================
+   🚀 BUSCADOR UNIFICADO EN EL HEADER PRINCIPAL
+   ============================================================== */
+/* Ajustamos la caja padre que envuelve al select y al input */
+.search-unified-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 24px; /* Estilo píldora para combinar con los botones ghost */
+  overflow: hidden; 
+  height: 42px; /* Misma altura que los botones */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  padding: 0 !important;
+  transition: all 0.3s ease;
+}
+
+.search-unified-wrapper:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+
+/* Ocultar el ícono de la lupa viejo para que no estorbe en el nuevo diseño */
+.search-premium > i {
+  display: none;
+}
+
+.search-premium .search-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 10px 16px !important;
+  height: 100% !important;
+  outline: none !important;
+  box-shadow: none !important;
+  width: 150px;
+  transition: width 0.3s ease;
+}
+
+.search-premium .search-input:focus {
+  width: 250px; /* Se expande dentro de la píldora */
+}
+
 
 /* Botones y Controles Rediseñados */
 .search-premium {
