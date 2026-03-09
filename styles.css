@@ -1581,71 +1581,141 @@ thead th:hover .btn-col-hide {
 }
 
 /* ==============================================================
-   📱 MENÚ LATERAL RESPONSIVO (MÓVILES Y TABLETS)
+   📱 MENÚ LATERAL PREMIUM (MÓVILES Y TABLETS)
    ============================================================== */
 
-@media (max-width: 900px) {
-  /* El contenedor de botones se convierte en panel lateral */
-  .header-right {
-    position: fixed;
-    top: 0;
-    right: -320px; /* Oculto fuera de la pantalla por defecto */
-    width: 280px;
-    height: 100vh;
-    background: var(--bg-card);
-    flex-direction: column;
-    align-items: stretch !important; /* Estira los botones para que ocupen todo el ancho */
-    padding: 80px 24px 24px 24px;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
-    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 9999;
-    gap: 16px;
-    overflow-y: auto;
-  }
-
-  [data-theme="dark"] .header-right {
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
-  }
-
-  /* Clase que el JavaScript añadirá para deslizar el menú */
-  .header-right.menu-open {
-    right: 0;
-  }
-
-  /* Fondo oscuro semitransparente cuando el menú está abierto */
-  .mobile-menu-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 9998;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-  }
-
-  .mobile-menu-overlay.active {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  /* Estilo del botón de menú (Hamburguesa) */
-  .mobile-menu-btn {
-    display: flex !important;
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px;
-    color: var(--text-main);
-    cursor: pointer;
-    z-index: 10000;
-    position: absolute;
-    right: 24px;
-    top: 24px;
-  }
+/* DESKTOP: El wrapper es solo un organizador invisible */
+.action-buttons-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.mobile-sidebar-header, .mobile-menu-btn, .mobile-menu-overlay {
+    display: none; 
 }
 
-/* Ocultar elementos de móvil cuando estamos en escritorio */
-.mobile-menu-btn, .mobile-menu-overlay {
-  display: none;
+@media (max-width: 900px) {
+    /* 1. BUSCADOR EN SEGUNDA FILA */
+    .premium-header {
+        padding: 16px;
+    }
+    .header-right {
+        width: 100%;
+        justify-content: space-between; 
+        margin-top: 12px; /* Baja el bloque a la segunda fila */
+    }
+    .search-unified-wrapper {
+        flex-grow: 1; /* El buscador ocupa todo el espacio posible */
+        margin-right: 12px;
+    }
+    .search-premium .search-input {
+        width: 100% !important; /* Forza expansión total */
+    }
+
+    /* 2. BOTÓN HAMBURGUESA */
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px; height: 42px;
+        border-radius: 12px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.2s;
+    }
+    .mobile-menu-btn:hover { background: var(--bg-body); }
+
+    /* 3. DISEÑO DEL PANEL LATERAL */
+    .action-buttons-wrapper {
+        position: fixed;
+        top: 0; right: -320px;
+        width: 300px; height: 100vh;
+        background: var(--bg-card);
+        box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+        gap: 4px;
+        z-index: 9999;
+        transition: right 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    [data-theme="dark"] .action-buttons-wrapper {
+        box-shadow: -10px 0 30px rgba(0,0,0,0.6);
+        border-left: 1px solid var(--border);
+    }
+    .action-buttons-wrapper.open { right: 0; }
+
+    /* Cabecera del panel */
+    .mobile-sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 12px;
+    }
+    .mobile-sidebar-title {
+        font-size: 16px; font-weight: 700; color: var(--primary);
+    }
+    .close-sidebar-btn {
+        background: var(--bg-body); border: none; font-size: 20px; color: var(--text-muted); 
+        cursor: pointer; width: 32px; height: 32px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    /* 4. MEJORAR BOTONES E INYECTAR ETIQUETAS MÁGICAMENTE */
+    .action-buttons-wrapper > button,
+    .action-buttons-wrapper > div,
+    .action-buttons-wrapper > select,
+    .action-buttons-wrapper > .btn-ghost {
+        width: calc(100% - 32px) !important;
+        margin: 4px 16px;
+        min-height: 48px !important;
+        border-radius: 12px;
+        justify-content: flex-start !important; /* Alinea los iconos a la izquierda */
+        padding: 0 16px !important;
+        background: transparent !important;
+        border: 1px solid transparent !important;
+    }
+    .action-buttons-wrapper > .btn-ghost:hover {
+        background: var(--row-hover) !important;
+        border: 1px solid var(--border) !important;
+    }
+
+    /* 🌟 MAGIA PURA: Mostrar el texto del "title" del HTML como etiqueta al lado del icono */
+    .action-buttons-wrapper > .btn-ghost::after {
+        content: attr(title); /* Lee lo que dice el botón y lo convierte en texto */
+        font-size: 15px;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        margin-left: 16px;
+        color: var(--text-main);
+    }
+
+    /* Botón de exportar destacado al fondo del menú */
+    .action-buttons-wrapper > .btn-gradient {
+        margin-top: 16px;
+        padding: 0 20px !important;
+        background: linear-gradient(135deg, #0ea5e9, #6366f1) !important;
+        color: white !important;
+        border: none !important;
+        justify-content: center !important; /* Este sí va centrado */
+    }
+
+    /* 5. CORTINA OSCURA */
+    .mobile-menu-overlay {
+        display: block;
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(15,23,42,0.6);
+        backdrop-filter: blur(4px);
+        z-index: 9998;
+        opacity: 0; visibility: hidden;
+        transition: all 0.3s;
+    }
+    .mobile-menu-overlay.active {
+        opacity: 1; visibility: visible;
+    }
 }
