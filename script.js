@@ -1988,6 +1988,34 @@ showToast(msg, type = "info") {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+// 📱 CONFIGURACIÓN DEL MENÚ LATERAL MÓVIL
+    const headerRight = document.querySelector('.header-right');
+    const premiumHeader = document.querySelector('.premium-header');
+
+    if (headerRight && premiumHeader && !document.querySelector('.mobile-menu-btn')) {
+        // Crear el botón hamburguesa con un icono SVG
+        const btn = document.createElement('button');
+        btn.className = 'mobile-menu-btn';
+        btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
+
+        // Crear la cortina oscura de fondo
+        const overlay = document.createElement('div');
+        overlay.className = 'mobile-menu-overlay';
+
+        // Insertar en la página
+        premiumHeader.appendChild(btn);
+        document.body.appendChild(overlay);
+
+        // Lógica para abrir/cerrar
+        const toggleMenu = () => {
+            headerRight.classList.toggle('menu-open');
+            overlay.classList.toggle('active');
+        };
+
+        btn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu); // Cerrar al hacer clic fuera
+    }
+  
     try {
         window.app = new DataViewerApp();
     } catch (e) {
