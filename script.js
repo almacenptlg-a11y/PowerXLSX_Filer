@@ -1989,20 +1989,20 @@ showToast(msg, type = "info") {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  // 📱 CONFIGURACIÓN DEL MENÚ LATERAL MÓVIL PREMIUM
+  // 📱 CONFIGURACIÓN DEL MENÚ LATERAL MÓVIL PREMIUM (CORREGIDO)
     const headerRight = document.querySelector('.header-right');
     const premiumHeader = document.querySelector('.premium-header');
 
-    // Limpiamos overlays viejos para evitar duplicados al recargar
-    document.querySelectorAll('.mobile-menu-overlay').forEach(e => e.remove());
+    // Limpiamos elementos viejos para evitar duplicados en recargas
+    document.querySelectorAll('.mobile-menu-overlay, .action-buttons-wrapper, .mobile-menu-btn').forEach(e => e.remove());
 
-    if (headerRight && premiumHeader && !document.querySelector('.action-buttons-wrapper')) {
+    if (headerRight && premiumHeader) {
 
-        // 1. Crear el envoltorio inteligente (En PC es invisible, en Móvil es el menú)
+        // 1. Crear el envoltorio inteligente (Ahora lo enviaremos al BODY)
         const wrapper = document.createElement('div');
         wrapper.className = 'action-buttons-wrapper';
 
-        // 2. Cabecera del menú (Solo se verá en móvil)
+        // 2. Cabecera del menú lateral
         wrapper.innerHTML = `
            <div class="mobile-sidebar-header">
                <span class="mobile-sidebar-title">Configuración</span>
@@ -2010,24 +2010,26 @@ document.addEventListener("DOMContentLoaded", () => {
            </div>
         `;
 
-        // 3. Identificar SOLO los botones y opciones (Ignorar el buscador)
+        // 3. Extraer SOLO los botones (Dejamos el buscador quieto en su lugar)
         const childrenToMove = Array.from(headerRight.children).filter(el => 
             !el.classList.contains('search-premium') && 
             !el.classList.contains('search-unified-wrapper') &&
-            !el.classList.contains('brand-right')
+            !el.classList.contains('brand-right') &&
+            !el.classList.contains('mobile-menu-btn')
         );
 
-        // Mover los botones al envoltorio y añadir el envoltorio a la cabecera
         childrenToMove.forEach(child => wrapper.appendChild(child));
-        headerRight.appendChild(wrapper); 
+        
+        // 🚀 CORRECCIÓN CLAVE: Adjuntar el menú al BODY para que no lo tape la opacidad
+        document.body.appendChild(wrapper); 
 
-        // 4. Crear el botón hamburguesa moderno
+        // 4. Crear el botón hamburguesa en la cabecera
         const hamburger = document.createElement('button');
         hamburger.className = 'mobile-menu-btn';
-        hamburger.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
+        hamburger.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
         headerRight.appendChild(hamburger);
 
-        // 5. Crear la cortina oscura de fondo
+        // 5. Crear la cortina oscura de fondo (También en el BODY)
         const overlay = document.createElement('div');
         overlay.className = 'mobile-menu-overlay';
         document.body.appendChild(overlay);
