@@ -1581,10 +1581,10 @@ thead th:hover .btn-col-hide {
 }
 
 /* ==============================================================
-   📱 MENÚ LATERAL PREMIUM (MÓVILES Y TABLETS)
+   📱 MENÚ LATERAL PREMIUM Y DISEÑO MÓVIL CORREGIDO
    ============================================================== */
 
-/* DESKTOP: El wrapper es solo un organizador invisible */
+/* DESKTOP: El wrapper es solo un organizador horizontal normal */
 .action-buttons-wrapper {
     display: flex;
     align-items: center;
@@ -1595,78 +1595,114 @@ thead th:hover .btn-col-hide {
 }
 
 @media (max-width: 900px) {
-    /* 1. BUSCADOR EN SEGUNDA FILA */
+    /* 1. SEPARACIÓN ESTRICTA EN DOS FILAS PARA EL HEADER */
     .premium-header {
-        padding: 16px;
-    }
-    .header-right {
-        width: 100%;
-        justify-content: space-between; 
-        margin-top: 12px; /* Baja el bloque a la segunda fila */
-    }
-    .search-unified-wrapper {
-        flex-grow: 1; /* El buscador ocupa todo el espacio posible */
-        margin-right: 12px;
-    }
-    .search-premium .search-input {
-        width: 100% !important; /* Forza expansión total */
+        flex-direction: column !important; /* Obliga a apilar arriba y abajo */
+        align-items: stretch !important;
+        padding: 16px 20px !important;
+        gap: 16px !important; /* Espacio limpio entre el título y el buscador */
+        height: auto !important;
     }
 
-    /* 2. BOTÓN HAMBURGUESA */
+    /* Fila Superior: Título y Autor ocupan todo el ancho */
+    .header-left {
+        width: 100% !important;
+        margin-right: 0 !important;
+        flex: none !important;
+    }
+
+    /* Fila Inferior: Buscador Dual + Botón Menú */
+    .header-right {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important; /* Alinea buscador y botón uno al lado del otro */
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-top: 0 !important;
+        gap: 12px;
+    }
+
+    /* 2. PROTECCIÓN DEL BUSCADOR DUAL */
+    .search-premium {
+        flex-grow: 1 !important; /* Ocupa todo el espacio izquierdo disponible */
+        width: auto !important;
+    }
+    
+    .search-unified-wrapper {
+        display: flex !important; /* Fuerza mantener el selector y el input unidos en fila */
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .search-premium .search-input {
+        width: 100% !important; /* El cuadro de texto se estira al máximo */
+        min-width: 0 !important; /* Evita que rompa los márgenes */
+    }
+
+    /* El Selector se hace un poco más compacto en móviles para ceder espacio */
+    .modern-search-select {
+        max-width: 110px !important;
+        padding: 0 24px 0 12px !important;
+    }
+
+    /* 3. BOTÓN HAMBURGUESA */
     .mobile-menu-btn {
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
-        width: 42px; height: 42px;
-        border-radius: 12px;
-        background: transparent;
+        width: 42px; 
+        height: 42px;
+        border-radius: 8px;
+        background: var(--bg-card);
         border: 1px solid var(--border);
         color: var(--text-main);
         cursor: pointer;
-        flex-shrink: 0;
-        transition: background 0.2s;
+        flex-shrink: 0; /* Evita que el buscador lo aplaste */
     }
-    .mobile-menu-btn:hover { background: var(--bg-body); }
 
-    /* 3. DISEÑO DEL PANEL LATERAL */
+    /* 4. DISEÑO DEL PANEL LATERAL FLOTANTE */
     .action-buttons-wrapper {
         position: fixed;
         top: 0; right: -320px;
         width: 300px; height: 100vh;
         background: var(--bg-card);
-        box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        box-shadow: -10px 0 30px rgba(0,0,0,0.15);
         flex-direction: column;
         align-items: stretch;
         padding: 0;
         gap: 4px;
-        z-index: 9999;
+        z-index: 9999 !important; /* Máxima prioridad (por encima de la cortina) */
         transition: right 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     }
+    
     [data-theme="dark"] .action-buttons-wrapper {
-        box-shadow: -10px 0 30px rgba(0,0,0,0.6);
+        box-shadow: -10px 0 30px rgba(0,0,0,0.7);
         border-left: 1px solid var(--border);
     }
+    
     .action-buttons-wrapper.open { right: 0; }
 
-    /* Cabecera del panel */
+    /* Cabecera del panel lateral */
     .mobile-sidebar-header {
-        display: flex;
+        display: flex !important;
         justify-content: space-between;
         align-items: center;
         padding: 24px;
         border-bottom: 1px solid var(--border);
         margin-bottom: 12px;
     }
+    
     .mobile-sidebar-title {
         font-size: 16px; font-weight: 700; color: var(--primary);
     }
+    
     .close-sidebar-btn {
         background: var(--bg-body); border: none; font-size: 20px; color: var(--text-muted); 
         cursor: pointer; width: 32px; height: 32px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
     }
 
-    /* 4. MEJORAR BOTONES E INYECTAR ETIQUETAS MÁGICAMENTE */
+    /* Estilo de los iconos + texto mágico en el panel lateral */
     .action-buttons-wrapper > button,
     .action-buttons-wrapper > div,
     .action-buttons-wrapper > select,
@@ -1675,34 +1711,32 @@ thead th:hover .btn-col-hide {
         margin: 4px 16px;
         min-height: 48px !important;
         border-radius: 12px;
-        justify-content: flex-start !important; /* Alinea los iconos a la izquierda */
+        justify-content: flex-start !important; 
         padding: 0 16px !important;
         background: transparent !important;
         border: 1px solid transparent !important;
     }
+    
     .action-buttons-wrapper > .btn-ghost:hover {
         background: var(--row-hover) !important;
         border: 1px solid var(--border) !important;
     }
 
-    /* 🌟 MAGIA PURA: Mostrar el texto del "title" del HTML como etiqueta al lado del icono */
     .action-buttons-wrapper > .btn-ghost::after {
-        content: attr(title); /* Lee lo que dice el botón y lo convierte en texto */
+        content: attr(title); 
         font-size: 15px;
         font-weight: 600;
-        font-family: 'Inter', sans-serif;
         margin-left: 16px;
         color: var(--text-main);
     }
 
-    /* Botón de exportar destacado al fondo del menú */
     .action-buttons-wrapper > .btn-gradient {
         margin-top: 16px;
         padding: 0 20px !important;
         background: linear-gradient(135deg, #0ea5e9, #6366f1) !important;
         color: white !important;
         border: none !important;
-        justify-content: center !important; /* Este sí va centrado */
+        justify-content: center !important; 
     }
 
     /* 5. CORTINA OSCURA */
@@ -1711,10 +1745,11 @@ thead th:hover .btn-col-hide {
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
         background: rgba(15,23,42,0.6);
         backdrop-filter: blur(4px);
-        z-index: 9998;
+        z-index: 9998 !important; /* Justo por debajo del panel lateral (9999) */
         opacity: 0; visibility: hidden;
         transition: all 0.3s;
     }
+    
     .mobile-menu-overlay.active {
         opacity: 1; visibility: visible;
     }
