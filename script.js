@@ -1354,6 +1354,45 @@ renderMenuContent(col, container) {
 
       doc.save(`${fname}.pdf`);
 
+      // ==========================================
+    // 📝 EXPORTACIÓN A CSV PURO (Datos Crudos)
+    // ==========================================
+    } else if (format === "csv") {
+      let csvContent = "";
+      const visibleCols = this.columns.filter(c => !this.colSettings[c].hidden);
+      
+      // Encabezados
+      csvContent += visibleCols.map(c => `"${c}"`).join(";") + "\n";
+      
+      // Filas
+      this.visibleData.forEach(row => {
+          const rowData = visibleCols.map(col => {
+              let val = row[col];
+              if (val === null || val === undefined) val = "";
+              
+              const config = this.colSettings[col];
+              if (config && config.type === "link" && val !== "") {
+                  val = String(val); 
+              } else if (config && (config.type === "number" || config.type === "currency" || config.type === "percent")) {
+                  val = String(val); 
+              } else {
+                  val = String(val);
+              }
+
+              let strVal = val.replace(/"/g, '""');
+              return `"${strVal}"`;
+          });
+          csvContent += rowData.join(";") + "\n";
+      });
+      
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' }); 
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${fname}_DatosPuros.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
     // ==========================================
     // 🌐 EXPORTACIÓN A HTML INTERACTIVO (.html)
     // ==========================================
