@@ -168,25 +168,30 @@
           <i class="ph ph-moon" id="themeIcon"></i>
         </button>
 
-        <div style="position:relative">
-          <button class="btn btn-gradient" id="btnExport" onclick="app.toggleMenu('exportMenu')">
-            <span>Exportar</span> <i class="ph ph-caret-down"></i>
-          </button>
-          <div id="exportMenu" class="dropdown" style="right:0; top:55px; width:200px; padding:8px;">
-            <div class="dropdown-item" onclick="app.exportTo('xlsx')">
-              <i class="ph ph-file-xls" style="color:var(--success)"></i> Excel (.xlsx)
-            </div>
-            <div class="dropdown-item" onclick="app.openCsvMapper()">
-              <i class="ph ph-file-csv" style="color:#f59e0b"></i> CSV AlmacenPT
-            </div>
-            <div class="dropdown-item" onclick="app.exportTo('html')">
-              <i class="ph ph-browser" style="color:var(--primary)"></i> HTML Interactivo
-            </div>
-            <div class="dropdown-item" onclick="app.exportTo('pdf')">
-              <i class="ph ph-file-pdf" style="color:var(--danger)"></i> PDF Estático
-            </div>
-          </div>
-        </div>
+       <div style="position:relative">
+  <button class="btn btn-gradient" id="btnExport" onclick="app.toggleMenu('exportMenu')">
+    <span>Exportar</span> <i class="ph ph-caret-down"></i>
+  </button>
+  <div id="exportMenu" class="dropdown" style="right:0; top:55px; width:200px; padding:8px;">
+    <div class="dropdown-item" onclick="app.exportTo('xlsx')">
+      <i class="ph ph-file-xls" style="color:var(--success)"></i> Excel (.xlsx)
+    </div>
+    
+    <div class="dropdown-item" onclick="app.exportTo('csv')">
+      <i class="ph ph-file-text" style="color:var(--text-muted)"></i> CSV (Datos puros)
+    </div>
+
+    <div class="dropdown-item" onclick="app.openCsvMapper()">
+      <i class="ph ph-file-csv" style="color:#f59e0b"></i> CSV AlmacenPT
+    </div>
+    <div class="dropdown-item" onclick="app.exportTo('html')">
+      <i class="ph ph-browser" style="color:var(--primary)"></i> HTML Interactivo
+    </div>
+    <div class="dropdown-item" onclick="app.exportTo('pdf')">
+      <i class="ph ph-file-pdf" style="color:var(--danger)"></i> PDF Estático
+    </div>
+  </div>
+</div>
 
         <button class="btn btn-ghost danger-hover" id="btnResetPrefs" title="Restaurar configuración visual">
           <i class="ph ph-arrow-counter-clockwise"></i>
